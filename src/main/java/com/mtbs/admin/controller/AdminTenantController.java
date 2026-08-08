@@ -5,7 +5,7 @@ import com.mtbs.admin.dto.AdminTenantListResponse;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
-import com.mtbs.tenant.dto.tenant.TenantResponse;
+import com.mtbs.tenant.dto.tenant.ShopResponse;
 import com.mtbs.auth.dto.user.UserResponse;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.admin.service.AdminTenantService;
@@ -80,11 +80,11 @@ public class AdminTenantController {
             description = "Updates a tenant's status (ACTIVE, SUSPENDED, INACTIVE). " +
                     "SUSPENDED tenants cannot log in or access any API endpoints."
     )
-    public ResponseEntity<ApiResponse<TenantResponse>> changeTenantStatus(
+    public ResponseEntity<ApiResponse<ShopResponse>> changeTenantStatus(
             @PathVariable Long id,
             @Valid @RequestBody ChangeTenantStatusRequest request) {
 
-        TenantResponse response = adminTenantService.changeTenantStatus(id, request);
+        ShopResponse response = adminTenantService.changeTenantStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant status updated successfully"));
     }
 

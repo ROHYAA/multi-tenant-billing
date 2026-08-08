@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.util.List;
  
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
-public class CreateBusinessInvoiceRequest {
+public class CreateBillRequest {
  
     @NotNull(message = "Customer ID is required")
     private Long customerId;

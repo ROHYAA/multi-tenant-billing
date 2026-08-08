@@ -2,15 +2,15 @@ package com.mtbs.business.invoice.service;
 
 import com.mtbs.business.customer.service.CustomerService;
 import com.mtbs.business.product.service.ProductService;
-import com.mtbs.business.invoice.dto.AddLineItemRequest;
-import com.mtbs.business.invoice.dto.BusinessInvoiceItemResponse;
-import com.mtbs.business.invoice.dto.BusinessInvoiceResponse;
-import com.mtbs.business.invoice.dto.CreateBusinessInvoiceRequest;
-import com.mtbs.business.invoice.dto.CreateBusinessInvoiceRequest.InvoiceLineItemRequest;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.business.invoice.entity.BusinessInvoiceItem;
-import com.mtbs.business.invoice.mapper.BusinessInvoiceMapper;
-import com.mtbs.business.invoice.mapper.BusinessInvoiceItemMapper;
+import com.mtbs.business.invoice.dto.AddBillItemRequest;
+import com.mtbs.business.invoice.dto.BillItemResponse;
+import com.mtbs.business.invoice.dto.BillResponse;
+import com.mtbs.business.invoice.dto.CreateBillRequest;
+import com.mtbs.business.invoice.dto.CreateBillRequest.InvoiceLineItemRequest;
+import com.mtbs.business.invoice.entity.Bill;
+import com.mtbs.business.invoice.entity.BillItem;
+import com.mtbs.business.invoice.mapper.BillMapper;
+import com.mtbs.business.invoice.mapper.BillItemMapper;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.product.entity.Product;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
@@ -18,9 +18,9 @@ import com.mtbs.shared.enums.notification.NotificationEvent;
 import com.mtbs.shared.event.bill.BillEvent;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.exception.ResourceException;
-import com.mtbs.business.invoice.repository.BusinessInvoiceItemRepository;
-import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.business.invoice.repository.BillItemRepository;
+import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,11 +46,11 @@ import java.util.stream.Collectors;
  * Invoice lifecycle enforced here:
  *   DRAFT  → items can be added/removed, totals recalculated
  *   OPEN   → finalizeInvoice() — sets due date, locks from edits
- *   PAID   → transitioned by BusinessPaymentService when fully paid
+ *   PAID   → transitioned by PaymentService when fully paid
  *   VOID   → voidInvoice() — only from DRAFT or OPEN, never from PAID
  *
  * PDF generation:
- *   BusinessInvoicePdfService is a separate service built in Phase 4.
+ *   BillPdfService is a separate service built in Phase 4.
  *   sendInvoice() calls it and emails the customer.
  *   For now the download endpoint delegates to InvoicePdfService — we add
  *   the business-specific overload in Phase 4.
@@ -70,20 +70,20 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BusinessInvoiceService {
+public class BillService {
 
     private static final int DEFAULT_PAYMENT_TERMS_DAYS = 30;
 
-    private final BusinessInvoiceRepository invoiceRepository;
-    private final BusinessInvoiceItemRepository itemRepository;
+    private final BillRepository invoiceRepository;
+    private final BillItemRepository itemRepository;
     private final CustomerService customerService;
     private final ProductService productService;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final BusinessInvoiceMapper invoiceMapper;
-    private final BusinessInvoiceItemMapper itemMapper;
+    private final BillMapper invoiceMapper;
+    private final BillItemMapper itemMapper;
 
-    private final BusinessInvoicePdfService pdfService;
+    private final BillPdfService pdfService;
 
     // ── Create ────────────────────────────────────────────────────────────────
 
@@ -93,11 +93,11 @@ public class BusinessInvoiceService {
      * Calculates and stores all financial totals.
      */
     @Transactional
-    public BusinessInvoiceResponse create(CreateBusinessInvoiceRequest request) {
+    public BillResponse create(CreateBillRequest request) {
         // Validate customer exists
         Customer customer = customerService.getEntityById(request.getCustomerId());
 
-        BusinessInvoice invoice = BusinessInvoice.builder()
+        Bill invoice = Bill.builder()
                 .invoiceNumber(generateInvoiceNumber())
                 .customerId(customer.getId())
                 .status(InvoiceStatus.DRAFT)
@@ -105,10 +105,10 @@ public class BusinessInvoiceService {
                 .notes(request.getNotes())
                 .build();
 
-        BusinessInvoice saved = invoiceRepository.save(invoice);
+        Bill saved = invoiceRepository.save(invoice);
 
         // Add line items
-        List<BusinessInvoiceItem> items = new ArrayList<>();
+        List<BillItem> items = new ArrayList<>();
         if (request.getItems() != null) {
             for (InvoiceLineItemRequest itemReq : request.getItems()) {
                 items.add(buildLineItem(saved, itemReq));
@@ -122,7 +122,7 @@ public class BusinessInvoiceService {
             invoiceRepository.save(saved);
         }
 
-        log.info("BusinessInvoice created — id={}, number={}, customerId={}",
+        log.info("Bill created — id={}, number={}, customerId={}",
                 saved.getId(), saved.getInvoiceNumber(), customer.getId());
         return mapToInvoiceResponse(saved, customer);
     }
@@ -130,11 +130,11 @@ public class BusinessInvoiceService {
     // ── Line item management (DRAFT only) ─────────────────────────────────────
 
     @Transactional
-    public BusinessInvoiceResponse addLineItem(Long invoiceId, AddLineItemRequest request) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse addLineItem(Long invoiceId, AddBillItemRequest request) {
+        Bill invoice = findOrThrow(invoiceId);
         assertDraft(invoice);
 
-        BusinessInvoiceItem item = buildLineItemFromRequest(invoice, request);
+        BillItem item = buildLineItemFromRequest(invoice, request);
         itemRepository.save(item);
         itemRepository.flush();
 
@@ -148,11 +148,11 @@ public class BusinessInvoiceService {
     }
 
     @Transactional
-    public BusinessInvoiceResponse removeLineItem(Long invoiceId, Long itemId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse removeLineItem(Long invoiceId, Long itemId) {
+        Bill invoice = findOrThrow(invoiceId);
         assertDraft(invoice);
 
-        BusinessInvoiceItem item = itemRepository.findById(itemId)
+        BillItem item = itemRepository.findById(itemId)
                 .orElseThrow(() -> ResourceException.notFound("InvoiceItem", itemId));
 
         if (!item.getInvoice().getId().equals(invoiceId)) {
@@ -180,8 +180,8 @@ public class BusinessInvoiceService {
      * After this point the invoice is locked — no item edits allowed.
      */
     @Transactional
-    public BusinessInvoiceResponse finalize(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse finalize(Long invoiceId) {
+        Bill invoice = findOrThrow(invoiceId);
         assertDraft(invoice);
 
         // Query items separately for validation — do NOT call invoice.setItems()
@@ -194,7 +194,7 @@ public class BusinessInvoiceService {
         invoice.setDueDate(Instant.now().plusSeconds(
                 (long) DEFAULT_PAYMENT_TERMS_DAYS * 24 * 60 * 60));
 
-        BusinessInvoice saved = invoiceRepository.save(invoice);
+        Bill saved = invoiceRepository.save(invoice);
         log.info("Invoice finalized — id={}, dueDate={}", invoiceId, saved.getDueDate());
 
         Customer customer = customerService.getEntityById(saved.getCustomerId());
@@ -208,8 +208,8 @@ public class BusinessInvoiceService {
      * (PDF generation is wired in Phase 4 — event fires immediately.)
      */
     @Transactional
-    public BusinessInvoiceResponse send(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse send(Long invoiceId) {
+        Bill invoice = findOrThrow(invoiceId);
 
         if (invoice.getStatus() != InvoiceStatus.OPEN) {
             throw ResourceException.invalid(
@@ -239,19 +239,19 @@ public class BusinessInvoiceService {
      * Cannot void a PAID invoice — use a refund instead.
      */
     @Transactional
-    public BusinessInvoiceResponse voidInvoice(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse voidInvoice(Long invoiceId) {
+        Bill invoice = findOrThrow(invoiceId);
 
         if (invoice.getStatus() == InvoiceStatus.PAID) {
             throw ResourceException.invalid(
-                "Cannot void a PAID invoice. Record a refund in BusinessPayments instead.");
+                "Cannot void a PAID invoice. Record a refund in Payments instead.");
         }
         if (invoice.getStatus() == InvoiceStatus.VOID) {
             throw ResourceException.invalid("Invoice is already voided.");
         }
 
         invoice.setStatus(InvoiceStatus.VOID);
-        BusinessInvoice saved = invoiceRepository.save(invoice);
+        Bill saved = invoiceRepository.save(invoice);
         log.info("Invoice voided — id={}", invoiceId);
         return mapToInvoiceResponse(saved, customerService.getEntityById(saved.getCustomerId()));
     }
@@ -259,27 +259,27 @@ public class BusinessInvoiceService {
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public BusinessInvoiceResponse getById(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+    public BillResponse getById(Long invoiceId) {
+        Bill invoice = findOrThrow(invoiceId);
         return mapToInvoiceResponse(invoice, customerService.getEntityById(invoice.getCustomerId()));
     }
 
     @Transactional(readOnly = true)
-    public Page<BusinessInvoiceResponse> list(Long customerId, InvoiceStatus status, Pageable pageable) {
+    public Page<BillResponse> list(Long customerId, InvoiceStatus status, Pageable pageable) {
         return invoiceRepository.findWithFilters(customerId, status, pageable)
                 .map(inv -> mapToInvoiceResponse(inv,
                         customerService.getEntityById(inv.getCustomerId())));
     }
 
-    // ── Internal — called by BusinessPaymentService ───────────────────────────
+    // ── Internal — called by PaymentService ───────────────────────────
 
     /**
-     * Transitions invoice to PAID. Called by BusinessPaymentService when
+     * Transitions invoice to PAID. Called by PaymentService when
      * total payments collected >= invoice.totalAmount.
      */
     @Transactional
     public void markPaid(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
+        Bill invoice = findOrThrow(invoiceId);
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaidAt(Instant.now());
         invoiceRepository.save(invoice);
@@ -287,11 +287,11 @@ public class BusinessInvoiceService {
     }
 
     /**
-     * Returns the raw entity — used by BusinessPaymentService to validate
+     * Returns the raw entity — used by PaymentService to validate
      * invoice status and amount before recording a payment.
      */
     @Transactional(readOnly = true)
-    public BusinessInvoice getEntityById(Long invoiceId) {
+    public Bill getEntityById(Long invoiceId) {
         return findOrThrow(invoiceId);
     }
 
@@ -302,11 +302,11 @@ public class BusinessInvoiceService {
      * Called every time items are added or removed.
      * All values rounded to 2 decimal places (standard for INR).
      */
-    private void recalculateTotals(BusinessInvoice invoice) {
+    private void recalculateTotals(Bill invoice) {
         BigDecimal subtotal  = BigDecimal.ZERO;
         BigDecimal taxAmount = BigDecimal.ZERO;
 
-        for (BusinessInvoiceItem item : invoice.getItems()) {
+        for (BillItem item : invoice.getItems()) {
             BigDecimal lineBase = item.getUnitPrice()
                     .multiply(item.getQuantity())
                     .setScale(2, RoundingMode.HALF_UP);
@@ -319,13 +319,13 @@ public class BusinessInvoiceService {
         invoice.setTotalAmount(subtotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP));
     }
 
-    private void recalculateTotalsFromDb(BusinessInvoice invoice, Long invoiceId) {
-        List<BusinessInvoiceItem> items = itemRepository.findAllByInvoiceId(invoiceId);
+    private void recalculateTotalsFromDb(Bill invoice, Long invoiceId) {
+        List<BillItem> items = itemRepository.findAllByInvoiceId(invoiceId);
 
         BigDecimal subtotal  = BigDecimal.ZERO;
         BigDecimal taxAmount = BigDecimal.ZERO;
 
-        for (BusinessInvoiceItem item : items) {
+        for (BillItem item : items) {
             BigDecimal lineBase = item.getUnitPrice()
                     .multiply(item.getQuantity())
                     .setScale(2, RoundingMode.HALF_UP);
@@ -345,7 +345,7 @@ public class BusinessInvoiceService {
      * If productId is provided: snapshots price/tax from product.
      * If productId is null: uses values from the request directly (free-text item).
      */
-    private BusinessInvoiceItem buildLineItem(BusinessInvoice invoice,
+    private BillItem buildLineItem(Bill invoice,
                                               InvoiceLineItemRequest req) {
         BigDecimal unitPrice     = req.getUnitPrice();
         BigDecimal taxPercentage = req.getTaxPercentage() != null
@@ -370,10 +370,10 @@ public class BusinessInvoiceService {
     }
 
     /**
-     * Builds a line item from an AddLineItemRequest (single item add after creation).
+     * Builds a line item from an AddBillItemRequest (single item add after creation).
      */
-    private BusinessInvoiceItem buildLineItemFromRequest(BusinessInvoice invoice,
-                                                         AddLineItemRequest req) {
+    private BillItem buildLineItemFromRequest(Bill invoice,
+                                                         AddBillItemRequest req) {
         BigDecimal unitPrice     = req.getUnitPrice();
         BigDecimal taxPercentage = req.getTaxPercentage() != null
                 ? req.getTaxPercentage() : BigDecimal.ZERO;
@@ -395,7 +395,7 @@ public class BusinessInvoiceService {
                 req.getQuantity(), unitPrice, taxPercentage);
     }
 
-    private BusinessInvoiceItem buildItemWithCalculations(BusinessInvoice invoice,
+    private BillItem buildItemWithCalculations(Bill invoice,
                                                           Long productId,
                                                           String description,
                                                           BigDecimal quantity,
@@ -411,7 +411,7 @@ public class BusinessInvoiceService {
         BigDecimal total = lineBase.add(taxAmount)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        return BusinessInvoiceItem.builder()
+        return BillItem.builder()
                 .invoice(invoice)
                 .productId(productId)
                 .description(description)
@@ -440,7 +440,7 @@ public class BusinessInvoiceService {
 
     // ── Guard assertions ──────────────────────────────────────────────────────
 
-    private void assertDraft(BusinessInvoice invoice) {
+    private void assertDraft(Bill invoice) {
         if (invoice.getStatus() != InvoiceStatus.DRAFT) {
             throw ResourceException.invalid(
                 "This operation is only allowed on DRAFT invoices. Current status: "
@@ -448,14 +448,14 @@ public class BusinessInvoiceService {
         }
     }
 
-    private BusinessInvoice findOrThrow(Long id) {
+    private Bill findOrThrow(Long id) {
         return invoiceRepository.findById(id)
-                .orElseThrow(() -> ResourceException.notFound("BusinessInvoice", id));
+                .orElseThrow(() -> ResourceException.notFound("Bill", id));
     }
 
     // ── Notification ──────────────────────────────────────────────────────────
 
-    private void fireInvoiceSentEvent(BusinessInvoice invoice, Customer customer,
+    private void fireInvoiceSentEvent(Bill invoice, Customer customer,
                                       String tenantName, byte[] pdfBytes) {
         try {
             java.util.Map<String, Object> extra = new java.util.HashMap<>();
@@ -490,7 +490,7 @@ public class BusinessInvoiceService {
                     .invoiceDueDate(invoice.getDueDate())
                     .extra(extra)
                     .pdfAttachmentBase64(pdfBase64)
-                    .build(), "BusinessInvoice", invoice.getId());
+                    .build(), "Bill", invoice.getId());
 
         } catch (Exception e) {
             log.warn("Failed to fire BUSINESS_INVOICE_SENT for invoiceId={}: {}",
@@ -500,15 +500,15 @@ public class BusinessInvoiceService {
 
     // ── Response mapping ──────────────────────────────────────────────────────
 
-    private BusinessInvoiceResponse mapToInvoiceResponse(BusinessInvoice invoice, Customer customer) {
-        BusinessInvoiceResponse response = invoiceMapper.toResponseWithCustomer(
+    private BillResponse mapToInvoiceResponse(Bill invoice, Customer customer) {
+        BillResponse response = invoiceMapper.toResponseWithCustomer(
                 invoice, customer.getName(), customer.getEmail());
 
-        List<BusinessInvoiceItem> items = invoice.getItems() != null && !invoice.getItems().isEmpty()
+        List<BillItem> items = invoice.getItems() != null && !invoice.getItems().isEmpty()
                 ? invoice.getItems()
                 : itemRepository.findAllByInvoiceId(invoice.getId());
 
-        List<BusinessInvoiceItemResponse> itemResponses = items.stream()
+        List<BillItemResponse> itemResponses = items.stream()
                 .map(itemMapper::toResponse)
                 .collect(Collectors.toList());
 
@@ -516,14 +516,14 @@ public class BusinessInvoiceService {
         return response;
     }
 
-    public BusinessInvoiceResponse mapToResponse(BusinessInvoice invoice, Customer customer) {
+    public BillResponse mapToResponse(Bill invoice, Customer customer) {
         return mapToInvoiceResponse(invoice, customer);
     }
 
 
     /**
      * Generates a PDF byte array for a business invoice.
-     * Delegates to BusinessInvoicePdfService which handles all iText layout.
+     * Delegates to BillPdfService which handles all iText layout.
      * Called by GET /api/business-invoices/{id}/download.
      */
     @Transactional(readOnly = true)

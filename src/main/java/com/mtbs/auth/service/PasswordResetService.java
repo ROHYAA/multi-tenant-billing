@@ -1,7 +1,7 @@
 package com.mtbs.auth.service;
 
 import com.mtbs.auth.entity.User;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.notification.NotificationEvent;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
@@ -12,7 +12,7 @@ import com.mtbs.shared.exception.AuthException;
 import com.mtbs.shared.exception.TenantException;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.auth.repository.UserRepository;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +54,7 @@ public class PasswordResetService {
 
     private static final String KEY_PREFIX = "pwd_reset:";
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final UserRepository userRepository;
     private final SlugCacheService slugCacheService;
     private final SchemaCacheService schemaCacheService;
@@ -82,7 +82,7 @@ public class PasswordResetService {
         // Resolve tenantId from slug
         Long tenantId = slugCacheService.resolveTenantId(tenantSlug);
         
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         // Set TenantContext to query the tenant's user table
         TenantContext.setTenantId(tenant.getId());
@@ -150,7 +150,7 @@ public class PasswordResetService {
         String[] parts = matchedKey.split(":");
         Long userId = Long.parseLong(parts[2]);
 
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         // Token is single-use — delete before writing the password
         // (prevents replay even if the password write fails partway)
@@ -171,7 +171,7 @@ public class PasswordResetService {
     // ── Private helpers ───────────────────────────────────────────────────────
 
     @Transactional
-    protected void updateUserPassword(Long userId, String newPassword, Tenant tenant, String ipAddress, String deviceInfo) {
+    protected void updateUserPassword(Long userId, String newPassword, Shop tenant, String ipAddress, String deviceInfo) {
         User user = userRepository.findById(userId)
                 .orElseThrow(AuthException::invalidCredentials);
 
@@ -205,7 +205,7 @@ public class PasswordResetService {
                 .build(), "User", user.getId());
     }
 
-    private void firePasswordResetEmail(User user, Tenant tenant, String resetLink) {
+    private void firePasswordResetEmail(User user, Shop tenant, String resetLink) {
         try {
             outboxEventPublisher.save(AuthNotificationEvent.builder()
                     .eventType(NotificationEvent.PASSWORD_RESET_REQUESTED)

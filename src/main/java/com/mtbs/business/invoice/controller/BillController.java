@@ -1,12 +1,12 @@
 package com.mtbs.business.invoice.controller;
 
-import com.mtbs.business.invoice.dto.AddLineItemRequest;
-import com.mtbs.business.invoice.dto.BusinessInvoiceResponse;
-import com.mtbs.business.invoice.dto.CreateBusinessInvoiceRequest;
+import com.mtbs.business.invoice.dto.AddBillItemRequest;
+import com.mtbs.business.invoice.dto.BillResponse;
+import com.mtbs.business.invoice.dto.CreateBillRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
-import com.mtbs.business.invoice.service.BusinessInvoiceService;
+import com.mtbs.business.invoice.service.BillService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -32,13 +32,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/${api.version}/business-invoices")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('PERMISSION_BILLING_MANAGE')")
-@Tag(name = "Business Invoices",
+@Tag(name = "Bills",
      description = "Create and manage invoices for your customers. " +
                    "Lifecycle: DRAFT → OPEN (finalize) → PAID (payment recorded) | VOID (cancelled)")
 @SecurityRequirement(name = "bearerAuth")
-public class BusinessInvoiceController {
+public class BillController {
 
-    private final BusinessInvoiceService invoiceService;
+    private final BillService invoiceService;
 
     // ── POST /api/business-invoices ───────────────────────────────────────────
 
@@ -51,10 +51,10 @@ public class BusinessInvoiceController {
                       "Additional items can be added while status is DRAFT via POST /items. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> create(
-            @Valid @RequestBody CreateBusinessInvoiceRequest request) {
+    public ResponseEntity<ApiResponse<BillResponse>> create(
+            @Valid @RequestBody CreateBillRequest request) {
 
-        BusinessInvoiceResponse response = invoiceService.create(request);
+        BillResponse response = invoiceService.create(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Invoice created successfully"));
@@ -70,7 +70,7 @@ public class BusinessInvoiceController {
                       "Ordered by creation date descending. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<PageResponse<BusinessInvoiceResponse>>> list(
+    public ResponseEntity<ApiResponse<PageResponse<BillResponse>>> list(
             @Parameter(description = "Filter by customer ID")
             @RequestParam(required = false) Long customerId,
 
@@ -79,7 +79,7 @@ public class BusinessInvoiceController {
 
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        Page<BusinessInvoiceResponse> response = invoiceService.list(customerId, status, pageable);
+        Page<BillResponse> response = invoiceService.list(customerId, status, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(response), "Invoices fetched successfully"));
     }
 
@@ -91,8 +91,8 @@ public class BusinessInvoiceController {
         description = "Returns a single invoice with all line items and customer details. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> getById(@PathVariable Long id) {
-        BusinessInvoiceResponse response = invoiceService.getById(id);
+    public ResponseEntity<ApiResponse<BillResponse>> getById(@PathVariable Long id) {
+        BillResponse response = invoiceService.getById(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Invoice fetched successfully"));
     }
 
@@ -106,11 +106,11 @@ public class BusinessInvoiceController {
                       "Totals are recalculated and returned in the response. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> addItem(
+    public ResponseEntity<ApiResponse<BillResponse>> addItem(
             @PathVariable Long id,
-            @Valid @RequestBody AddLineItemRequest request) {
+            @Valid @RequestBody AddBillItemRequest request) {
 
-        BusinessInvoiceResponse response = invoiceService.addLineItem(id, request);
+        BillResponse response = invoiceService.addLineItem(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Line item added successfully"));
     }
 
@@ -125,11 +125,11 @@ public class BusinessInvoiceController {
                       "Totals are recalculated and returned in the response. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> removeItem(
+    public ResponseEntity<ApiResponse<BillResponse>> removeItem(
             @PathVariable Long id,
             @PathVariable Long itemId) {
 
-        BusinessInvoiceResponse response = invoiceService.removeLineItem(id, itemId);
+        BillResponse response = invoiceService.removeLineItem(id, itemId);
         return ResponseEntity.ok(ApiResponse.success(response, "Line item removed successfully"));
     }
 
@@ -144,8 +144,8 @@ public class BusinessInvoiceController {
                       "Returns 400 if the invoice has no line items or is not in DRAFT status. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> finalize(@PathVariable Long id) {
-        BusinessInvoiceResponse response = invoiceService.finalize(id);
+    public ResponseEntity<ApiResponse<BillResponse>> finalize(@PathVariable Long id) {
+        BillResponse response = invoiceService.finalize(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Invoice finalized successfully"));
     }
 
@@ -160,8 +160,8 @@ public class BusinessInvoiceController {
                       "Returns 400 if the invoice is not OPEN. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> send(@PathVariable Long id) {
-        BusinessInvoiceResponse response = invoiceService.send(id);
+    public ResponseEntity<ApiResponse<BillResponse>> send(@PathVariable Long id) {
+        BillResponse response = invoiceService.send(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Invoice sent to customer successfully"));
     }
 
@@ -175,8 +175,8 @@ public class BusinessInvoiceController {
                       "Cannot void an already-voided invoice. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessInvoiceResponse>> voidInvoice(@PathVariable Long id) {
-        BusinessInvoiceResponse response = invoiceService.voidInvoice(id);
+    public ResponseEntity<ApiResponse<BillResponse>> voidInvoice(@PathVariable Long id) {
+        BillResponse response = invoiceService.voidInvoice(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Invoice voided successfully"));
     }
 
@@ -192,7 +192,7 @@ public class BusinessInvoiceController {
                     "Requires BILLING_MANAGE permission."
     )
     public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
-        BusinessInvoiceResponse invoice = invoiceService.getById(id);
+        BillResponse invoice = invoiceService.getById(id);
         byte[] pdf = invoiceService.generatePdf(id);
 
         return ResponseEntity.ok()

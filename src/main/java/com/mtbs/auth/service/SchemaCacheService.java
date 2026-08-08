@@ -1,8 +1,8 @@
 package com.mtbs.auth.service;
 
 import com.mtbs.shared.exception.TenantException;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,7 +19,7 @@ public class SchemaCacheService {
     private static final Duration CACHE_TTL = Duration.ofHours(1);
 
     private final StringRedisTemplate stringRedisTemplate;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
 
     public String resolveSchemaName(Long tenantId) {
         String key = buildKey(tenantId);
@@ -30,7 +30,7 @@ public class SchemaCacheService {
             return cached;
         }
 
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         String schemaName = tenant.getSchemaName();
         stringRedisTemplate.opsForValue().set(key, schemaName, CACHE_TTL);

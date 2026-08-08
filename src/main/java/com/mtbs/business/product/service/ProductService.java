@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *  - Name uniqueness is enforced within tenant scope (schema isolation handles
  *    cross-tenant). This prevents duplicate entries in the catalog.
  *  - Price/tax changes on a product do NOT affect existing invoices —
- *    BusinessInvoiceItem snapshots values at creation time.
+ *    BillItem snapshots values at creation time.
  */
 @Service
 @RequiredArgsConstructor
@@ -142,10 +142,10 @@ public class ProductService {
         log.info("Product reactivated — id={}", productId);
     }
 
-    // ── Internal helper (used by BusinessInvoiceService) ─────────────────────
+    // ── Internal helper (used by BillService) ─────────────────────
 
     /**
-     * Returns the raw entity — used by BusinessInvoiceService to snapshot
+     * Returns the raw entity — used by BillService to snapshot
      * price and tax at invoice line item creation time.
      */
     @Transactional(readOnly = true)

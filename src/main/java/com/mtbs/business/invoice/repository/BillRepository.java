@@ -1,6 +1,6 @@
 package com.mtbs.business.invoice.repository;
 
-import com.mtbs.business.invoice.entity.BusinessInvoice;
+import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,16 +12,16 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
+import com.mtbs.business.invoice.entity.Bill;
 
 @Repository
-public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice, Long> {
+public interface BillRepository extends JpaRepository<Bill, Long> {
 
     // ── Uniqueness ────────────────────────────────────────────────────────────
 
     boolean existsByInvoiceNumber(String invoiceNumber);
 
-    Optional<BusinessInvoice> findByInvoiceNumber(String invoiceNumber);
+    Optional<Bill> findByInvoiceNumber(String invoiceNumber);
 
     // ── Filtered paginated listing ────────────────────────────────────────────
 
@@ -31,12 +31,12 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      * Null params are treated as "no filter" — all values match.
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE (:customerId IS NULL OR i.customerId = :customerId)
           AND (:status     IS NULL OR i.status     = :status)
         ORDER BY i.createdAt DESC
         """)
-    Page<BusinessInvoice> findWithFilters(
+    Page<Bill> findWithFilters(
             @Param("customerId") Long customerId,
             @Param("status")     InvoiceStatus status,
             Pageable pageable
@@ -49,47 +49,47 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      * Used by CustomerService.delete() to block deletion when open/paid invoices exist.
      * Example: findAllByCustomerIdAndStatusNot(id, InvoiceStatus.VOID)
      */
-    List<BusinessInvoice> findAllByCustomerIdAndStatusNot(Long customerId, InvoiceStatus status);
+    List<Bill> findAllByCustomerIdAndStatusNot(Long customerId, InvoiceStatus status);
 
     // ── Outstanding report queries ────────────────────────────────────────────
 
     /**
      * All non-deleted OPEN invoices ordered by due date ascending.
-     * Used by BusinessReportService.getOutstandingReport().
+     * Used by ReportService.getOutstandingReport().
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.status = com.mtbs.shared.enums.bill.InvoiceStatus.OPEN
         ORDER BY i.dueDate ASC NULLS LAST
         """)
-    List<BusinessInvoice> findAllOpen();
+    List<Bill> findAllOpen();
 
     /**
      * OPEN invoices whose due date has passed.
      * Used by outstanding report to separate current vs overdue.
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.status   = com.mtbs.shared.enums.bill.InvoiceStatus.OPEN
           AND i.dueDate IS NOT NULL
           AND i.dueDate  < :now
         """)
-    List<BusinessInvoice> findAllOverdue(@Param("now") Instant now);
+    List<Bill> findAllOverdue(@Param("now") Instant now);
 
     // ── Date-range report queries ─────────────────────────────────────────────
 
     /**
      * Invoices of a specific status created within a date range.
-     * Used by BusinessReportService.getRevenueReport() to count paid invoices.
+     * Used by ReportService.getRevenueReport() to count paid invoices.
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.status     = :status
           AND i.createdAt >= :from
           AND i.createdAt <= :to
         ORDER BY i.createdAt DESC
         """)
-    List<BusinessInvoice> findAllByStatusAndCreatedAtBetween(
+    List<Bill> findAllByStatusAndCreatedAtBetween(
             @Param("status") InvoiceStatus status,
             @Param("from")   Instant from,
             @Param("to")     Instant to
@@ -97,14 +97,14 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
 
     /**
      * All invoices created within a date range (any status).
-     * Used by BusinessReportService.getMonthlySummary().
+     * Used by ReportService.getMonthlySummary().
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.createdAt >= :from
           AND i.createdAt <= :to
         """)
-    List<BusinessInvoice> findAllByCreatedAtBetween(
+    List<Bill> findAllByCreatedAtBetween(
             @Param("from") Instant from,
             @Param("to")   Instant to
     );
@@ -113,10 +113,10 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
 
     /**
      * Total count of all non-deleted invoices (all statuses).
-     * Used by BusinessInvoiceService.generateInvoiceNumber() to derive
+     * Used by BillService.generateInvoiceNumber() to derive
      * the next sequence number. Monotonically increasing.
      */
-    @Query("SELECT COUNT(i) FROM BusinessInvoice i")
+    @Query("SELECT COUNT(i) FROM Bill i")
     long countAllIncludingVoid();
 
     // ── Revenue summary queries ────────────────────────────────────────────────────────────
@@ -125,13 +125,13 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      * PAID invoices within a date range.
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.status     = com.mtbs.shared.enums.bill.InvoiceStatus.PAID
           AND i.paidAt    >= :from
           AND i.paidAt    <= :to
         ORDER BY i.paidAt DESC
         """)
-    List<BusinessInvoice> findAllPaidBetween(
+    List<Bill> findAllPaidBetween(
             @Param("from") Instant from,
             @Param("to")   Instant to
     );
@@ -140,9 +140,9 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      * All PAID invoices.
      */
     @Query("""
-        SELECT i FROM BusinessInvoice i
+        SELECT i FROM Bill i
         WHERE i.status = com.mtbs.shared.enums.bill.InvoiceStatus.PAID
         ORDER BY i.paidAt DESC
         """)
-    List<BusinessInvoice> findAllPaid();
+    List<Bill> findAllPaid();
 }

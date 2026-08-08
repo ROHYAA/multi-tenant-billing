@@ -1,8 +1,7 @@
-package legacy.saasbilling.admin.service;
+package legacy.saasbilling.admin;
 
-import legacy.saasbilling.admin.AdminMetrics;
 import legacy.saasbilling.billing.service.SubscriptionService;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
 import legacy.saasbilling.shared.enums.PaymentStatus;
@@ -10,7 +9,7 @@ import legacy.saasbilling.shared.enums.SubscriptionStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
 import legacy.saasbilling.billing.repository.InvoiceRepository;
 import legacy.saasbilling.billing.repository.PaymentRepository;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,7 +23,7 @@ import java.util.*;
 @Slf4j
 public class AdminMetricsService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final SubscriptionService subscriptionService;
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
@@ -45,10 +44,10 @@ public class AdminMetricsService {
         BigDecimal totalPaymentsAmount = BigDecimal.ZERO;
         long failedPayments = 0;
 
-        List<Tenant> tenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
+        List<Shop> tenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
         Map<String, Long> tenantsByPlan = new HashMap<>();
 
-        for (Tenant tenant : tenants) {
+        for (Shop tenant : tenants) {
             try {
                 TenantContext.setTenantId(tenant.getId());
                 TenantContext.setCurrentSchema(tenant.getSchemaName());
@@ -71,9 +70,10 @@ public class AdminMetricsService {
                     }
                 }
 
-                // Plan distribution
-                String planCode = tenant.getPlan() != null ? tenant.getPlan().getCode() : null;
-                tenantsByPlan.merge(planCode != null ? planCode : "NONE", 1L, Long::sum);
+                // Plan distribution — Shop (formerly Tenant) no longer carries a `plan`
+                // association (dropped when the platform-billing module was archived).
+                // This metric is inert/unavailable for the archived dashboard.
+                tenantsByPlan.merge("NONE", 1L, Long::sum);
 
             } finally {
                 TenantContext.clear();

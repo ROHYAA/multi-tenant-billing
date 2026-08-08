@@ -11,8 +11,8 @@ import com.mtbs.auth.service.TenantAuthService;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestSchemaHelper;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.repository.TenantRepository;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.repository.ShopRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -60,7 +60,7 @@ class AuthServiceTest {
     private AuthService authService;
 
     @Autowired
-    private TenantRepository tenantRepository;
+    private ShopRepository tenantRepository;
 
     @Autowired
     private TestSchemaHelper testSchemaHelper;
@@ -80,9 +80,9 @@ class AuthServiceTest {
         testSchemaHelper.dropSchema(currentSchema);
     }
 
-    private Tenant createTestTenant(Status status) {
-        Tenant tenant = Tenant.builder()
-                .name("Test Tenant")
+    private Shop createTestTenant(Status status) {
+        Shop tenant = Shop.builder()
+                .name("Test Shop")
                 .schemaName(currentSchema)
                 .ownerEmail("owner@test.com")
                 .status(status)
@@ -98,7 +98,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("login valid credentials returns JWT and refresh token")
         void login_validCredentials_returnsJwtAndRefreshToken() {
-            Tenant tenant = createTestTenant(Status.ACTIVE);
+            Shop tenant = createTestTenant(Status.ACTIVE);
 
             LoginRequest request = LoginRequest.builder()
                 .tenantId(tenant.getId())
@@ -117,7 +117,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("login suspended tenant throws TenantException")
         void login_suspendedTenant_throwsTenantSuspended() {
-            Tenant tenant = createTestTenant(Status.SUSPENDED);
+            Shop tenant = createTestTenant(Status.SUSPENDED);
 
             LoginRequest request = LoginRequest.builder()
                 .tenantId(tenant.getId())
@@ -133,7 +133,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("login inactive tenant throws TenantException")
         void login_inactiveTenant_throwsTenantException() {
-            Tenant tenant = createTestTenant(Status.INACTIVE);
+            Shop tenant = createTestTenant(Status.INACTIVE);
 
             LoginRequest request = LoginRequest.builder()
                 .tenantId(tenant.getId())
@@ -149,7 +149,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("login pending onboarding tenant allows login and returns onboarding flag")
         void login_pendingOnboardingTenant_allowsLogin_returnsOnboardingFlag() {
-            Tenant tenant = createTestTenant(Status.PENDING_ONBOARDING);
+            Shop tenant = createTestTenant(Status.PENDING_ONBOARDING);
             tenant.setOnboardingStep(1);
             tenantRepository.save(tenant);
 
@@ -189,7 +189,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("refreshAccessToken valid token returns new access token")
         void refreshAccessToken_validToken_returnsNewAccessToken() {
-            Tenant tenant = createTestTenant(Status.ACTIVE);
+            Shop tenant = createTestTenant(Status.ACTIVE);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .tenantId(tenant.getId())
@@ -205,7 +205,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("refreshAccessToken suspended tenant throws TenantException")
         void refreshAccessToken_suspendedTenant_throwsTenantException() {
-            Tenant tenant = createTestTenant(Status.SUSPENDED);
+            Shop tenant = createTestTenant(Status.SUSPENDED);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .tenantId(tenant.getId())
@@ -220,7 +220,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("refreshAccessToken inactive tenant throws TenantException")
         void refreshAccessToken_inactiveTenant_throwsTenantException() {
-            Tenant tenant = createTestTenant(Status.INACTIVE);
+            Shop tenant = createTestTenant(Status.INACTIVE);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .tenantId(tenant.getId())
@@ -253,7 +253,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("logout revokes refresh token")
         void logout_revokesRefreshToken() {
-            Tenant tenant = createTestTenant(Status.ACTIVE);
+            Shop tenant = createTestTenant(Status.ACTIVE);
 
             LogoutRequest request = LogoutRequest.builder()
                 .refreshToken("refresh_token_to_revoke")

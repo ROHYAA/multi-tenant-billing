@@ -29,7 +29,7 @@ import java.util.List;
  * Lifecycle:
  *   DRAFT  → line items can be added/removed, totals recalculated
  *   OPEN   → finalized, due date set, PDF generated, sent to customer
- *   PAID   → one or more BusinessPayments have covered the total_amount
+ *   PAID   → one or more Payments have covered the total_amount
  *   VOID   → cancelled before payment (cannot void a PAID invoice)
  *
  * Intentionally SEPARATE from the platform Invoice entity (which records
@@ -39,7 +39,7 @@ import java.util.List;
  * "B" prefix distinguishes from platform INV-* numbers.
  *
  * Totals are stored explicitly (not computed on read) for audit immutability.
- * Recalculation happens only in BusinessInvoiceService when line items change,
+ * Recalculation happens only in BillService when line items change,
  * and only while the invoice is in DRAFT status.
  */
 @Entity
@@ -51,7 +51,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessInvoice extends AuditableEntity {
+public class Bill extends AuditableEntity {
 
     @Column(name = "invoice_number", nullable = false, unique = true, length = 50)
     private String invoiceNumber;
@@ -120,5 +120,5 @@ public class BusinessInvoice extends AuditableEntity {
 
     @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<BusinessInvoiceItem> items = new ArrayList<>();
+    private List<BillItem> items = new ArrayList<>();
 }

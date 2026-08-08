@@ -24,10 +24,10 @@ import com.mtbs.shared.exception.ResourceException;
 import legacy.saasbilling.shared.exception.SubscriptionException;
 import com.mtbs.shared.multitenancy.TenantContext;
 import legacy.saasbilling.tenant.entity.Plan;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import legacy.saasbilling.tenant.repository.PlanRepository;
 import legacy.saasbilling.tenant.service.PlanService;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,7 +85,7 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final PlanService planService;
     private final PlanRepository planRepository;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final InvoiceService invoiceService;
     private final PaymentService paymentService;
     private final ProrationService prorationService;
@@ -998,7 +998,7 @@ public class SubscriptionService {
     private void fireSimpleEvent(NotificationEvent type, Plan plan, Subscription sub) {
         try {
             Long tenantId = TenantContext.getTenantId();
-            Tenant tenant = tenantService.getTenantById(tenantId);
+            Shop tenant = tenantService.getTenantById(tenantId);
 
             outboxEventPublisher.save(BillEvent.builder()
                     .eventType(type)
@@ -1021,7 +1021,7 @@ public class SubscriptionService {
                                   Subscription sub, Long invoiceId) {
         try {
             Long tenantId = TenantContext.getTenantId();
-            Tenant tenant = tenantService.getTenantById(tenantId);
+            Shop tenant = tenantService.getTenantById(tenantId);
 
             outboxEventPublisher.save(BillEvent.builder()
                     .eventType(type)

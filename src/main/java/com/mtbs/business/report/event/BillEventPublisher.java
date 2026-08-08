@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * Publishes business billing events (customer invoices and payments).
  *
- * Used by: BusinessInvoiceService, BusinessPaymentService
+ * Used by: BillService, PaymentService
  * Listener: NotificationService.handleBillingEvent(BillEvent)
  *
  * Events routed through this publisher:
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class BusinessEventPublisher {
+public class BillEventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
 

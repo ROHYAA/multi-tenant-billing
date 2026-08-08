@@ -4,7 +4,7 @@ import com.mtbs.auth.dto.auth.AuthResponse;
 import com.mtbs.auth.dto.auth.SignupRequest;
 import com.mtbs.auth.dto.auth.TokenPair;
 import com.mtbs.shared.util.CookieUtils;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.enums.notification.NotificationEvent;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
@@ -14,7 +14,7 @@ import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.AuthException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.tenant.service.TenantFlywayMigrationService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * Responsibilities:
  *  1. Validate email uniqueness across all shop schemas (via public lookup)
- *  2. Create Tenant row in public schema, ACTIVE immediately (no onboarding wizard)
+ *  2. Create Shop row in public schema, ACTIVE immediately (no onboarding wizard)
  *  3. Provision PostgreSQL schema via Flyway
  *  4. Create ROLE_OWNER user in the new schema via TenantAuthService
  *  5. Fire USER_REGISTERED notification (welcome email)
@@ -44,7 +44,7 @@ import java.util.Map;
 @Slf4j
 public class SignupService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final TenantFlywayMigrationService tenantFlywayMigrationService;
     private final TenantAuthService tenantScopedAuthService;
     private final OutboxEventPublisher outboxEventPublisher;
@@ -62,8 +62,8 @@ public class SignupService {
         String provisionalSlug = deriveProvisionalSlug(request.getEmail());
         String schemaName = "schema_" + provisionalSlug + "_" + System.currentTimeMillis();
 
-        // 3. Persist Tenant row in public schema, ACTIVE immediately
-        Tenant tenant = saveTenant(request, schemaName, provisionalSlug);
+        // 3. Persist Shop row in public schema, ACTIVE immediately
+        Shop tenant = saveTenant(request, schemaName, provisionalSlug);
 
         // 4. Provision schema + run all tenant Flyway migrations
         try {
@@ -97,8 +97,8 @@ public class SignupService {
     // ── Private helpers ───────────────────────────────────────────────────────
 
     @Transactional
-    public Tenant saveTenant(SignupRequest request, String schemaName, String provisionalSlug) {
-        Tenant tenant = Tenant.builder()
+    public Shop saveTenant(SignupRequest request, String schemaName, String provisionalSlug) {
+        Shop tenant = Shop.builder()
                 .name(request.getName())
                 .schemaName(schemaName)
                 .slug(provisionalSlug)
@@ -116,13 +116,13 @@ public class SignupService {
                 .action(AuditAction.STATUS_CHANGE)
                 .entityType(AuditEntityType.TENANT)
                 .entityId(tenantId)
-                .entityName("Tenant")
+                .entityName("Shop")
                 .changesBefore(Map.of("status", Status.ACTIVE.name()))
                 .changesAfter(Map.of("status", Status.INACTIVE.name()))
                 .description("Shop schema provisioning failed")
                 .module("TENANT_MANAGEMENT")
                 .severity("WARN")
-                .build(), "Tenant", tenantId);
+                .build(), "Shop", tenantId);
     }
 
     /**
@@ -130,7 +130,7 @@ public class SignupService {
      * Uses AuthNotificationEvent — maps to auth/welcome.html template.
      * Never throws — failure is logged and ignored so signup always succeeds.
      */
-    private void fireWelcomeNotification(SignupRequest request, Tenant tenant) {
+    private void fireWelcomeNotification(SignupRequest request, Shop tenant) {
         try {
             outboxEventPublisher.save(AuthNotificationEvent.builder()
                     .eventType(NotificationEvent.USER_REGISTERED)
@@ -138,7 +138,7 @@ public class SignupService {
                     .recipientName(request.getName())
                     .tenantName(tenant.getName())
                     .eventTime(Instant.now())
-                    .build(), "Tenant", tenant.getId());
+                    .build(), "Shop", tenant.getId());
             log.debug("USER_REGISTERED notification fired for email={}", request.getEmail());
         } catch (Exception e) {
             log.warn("Failed to fire USER_REGISTERED notification for email={}: {}",

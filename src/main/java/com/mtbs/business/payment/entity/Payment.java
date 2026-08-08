@@ -19,9 +19,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * A payment received from a customer against a BusinessInvoice.
+ * A payment received from a customer against a Bill.
  *
- * Supports partial payments — multiple BusinessPayments can exist per invoice.
+ * Supports partial payments — multiple Payments can exist per invoice.
  * The invoice transitions to PAID when sum(amount) >= invoice.totalAmount.
  *
  * paidAt vs createdAt:
@@ -49,7 +49,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessPayment extends AuditableEntity {
+public class Payment extends AuditableEntity {
 
     /**
      * FK to business_invoices(id).

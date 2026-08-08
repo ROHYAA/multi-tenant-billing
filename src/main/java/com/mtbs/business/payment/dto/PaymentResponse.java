@@ -13,7 +13,7 @@ import java.time.Instant;
  
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BusinessPaymentResponse {
+public class PaymentResponse {
  
     private Long          id;
     private Long          invoiceId;

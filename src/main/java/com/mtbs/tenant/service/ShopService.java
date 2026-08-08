@@ -1,12 +1,12 @@
 package com.mtbs.tenant.service;
 
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
-import com.mtbs.tenant.dto.tenant.TenantResponse;
-import com.mtbs.tenant.dto.tenant.TenantSchemaInfoResponse;
-import com.mtbs.tenant.dto.tenant.TenantStatusResponse;
-import com.mtbs.tenant.dto.tenant.UpdateTenantRequest;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.mapper.TenantMapper;
+import com.mtbs.tenant.dto.tenant.ShopResponse;
+import com.mtbs.tenant.dto.tenant.ShopSchemaInfoResponse;
+import com.mtbs.tenant.dto.tenant.ShopStatusResponse;
+import com.mtbs.tenant.dto.tenant.UpdateShopRequest;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.mapper.ShopMapper;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
@@ -14,7 +14,7 @@ import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.shared.exception.TenantException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.repository.TenantRepository;
+import com.mtbs.tenant.repository.ShopRepository;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,44 +29,44 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * Handles self-management operations for the currently authenticated Tenant.
+ * Handles self-management operations for the currently authenticated Shop.
  * Operates primarily on the public schema.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TenantService {
+public class ShopService {
 
-        private final TenantRepository tenantRepository;
+        private final ShopRepository tenantRepository;
         private final JdbcTemplate jdbcTemplate;
         private final OutboxEventPublisher outboxEventPublisher;
-        private final TenantMapper tenantMapper;
+        private final ShopMapper tenantMapper;
 
         @Transactional(readOnly = true)
-        public Tenant getTenantById(Long tenantId) {
+        public Shop getTenantById(Long tenantId) {
                 log.info("Fetching tenant details for id: {}", tenantId);
                 return tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
         }
 
-        public TenantResponse getTenantByIdAsResponse(Long tenantId) {
+        public ShopResponse getTenantByIdAsResponse(Long tenantId) {
                 return tenantMapper.toResponse(this.getTenantById(tenantId));
         }
 
         public String fetchTenantName() {
                 return tenantRepository.findById(TenantContext.getTenantId())
-                        .map(Tenant::getName)
+                        .map(Shop::getName)
                         .orElse("Unknown");
         }
 
         public String getTenantNameById(Long tenantId) {
                 return tenantRepository.findById(tenantId)
-                        .map(Tenant::getName)
+                        .map(Shop::getName)
                         .orElse("Unknown");
         }
 
         @Transactional(readOnly = true)
-        public Tenant findTenantBySlug(String slug) {
+        public Shop findTenantBySlug(String slug) {
                 log.info("Fetching tenant by slug: {}", slug);
                 return tenantRepository.findBySlug(slug.toLowerCase().trim())
                                 .orElseThrow(() -> TenantException.notFound("No tenant found with identifier: " + slug));
@@ -83,27 +83,27 @@ public class TenantService {
         }
 
         @Transactional(readOnly = true)
-        public List<Tenant> getAllTenants() {
+        public List<Shop> getAllTenants() {
                 return tenantRepository.findAll();
         }
 
         @Transactional
-        public Tenant saveTenant(Tenant tenant) {
+        public Shop saveTenant(Shop tenant) {
                 return tenantRepository.save(tenant);
         }
 
         @Transactional
         public void updateTenantStatus(Long tenantId, Status status) {
-                Tenant tenant = tenantRepository.findById(tenantId)
+                Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
                 tenant.setStatus(status);
                 tenantRepository.save(tenant);
         }
 
         @Transactional
-        public TenantResponse updateTenant(Long tenantId, UpdateTenantRequest request) {
+        public ShopResponse updateTenant(Long tenantId, UpdateShopRequest request) {
                 log.info("Updating tenant id: {}", tenantId);
-                Tenant tenant = tenantRepository.findById(tenantId)
+                Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
 
                 tenant.setName(request.getName());
@@ -111,15 +111,15 @@ public class TenantService {
 
                 fireAuditEvent(AuditAction.UPDATE, tenant.getId(), tenant.getName(),
                         Map.of("name", request.getName()),
-                        "Tenant updated");
+                        "Shop updated");
 
                 return tenantMapper.toResponse(tenant);
         }
 
         @Transactional(readOnly = true)
-        public TenantSchemaInfoResponse getTenantSchemaInfo(Long tenantId) {
+        public ShopSchemaInfoResponse getTenantSchemaInfo(Long tenantId) {
                 log.info("Fetching schema info counts for tenant id: {}", tenantId);
-                Tenant tenant = tenantRepository.findById(tenantId)
+                Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
 
                 String schema = "\"" + tenant.getSchemaName() + "\"";
@@ -130,7 +130,7 @@ public class TenantService {
                 Long roleCount = jdbcTemplate.queryForObject(
                                 "SELECT COUNT(*) FROM " + schema + ".roles WHERE deleted = false", Long.class);
 
-                return TenantSchemaInfoResponse.builder()
+                return ShopSchemaInfoResponse.builder()
                                 .schemaName(tenant.getSchemaName())
                                 .userCount(userCount != null ? userCount : 0L)
                                 .roleCount(roleCount != null ? roleCount : 0L)
@@ -138,12 +138,12 @@ public class TenantService {
                                 .build();
         }
 
-        public TenantStatusResponse getTenantStatus(Long tenantId) {
+        public ShopStatusResponse getTenantStatus(Long tenantId) {
                 log.info("Fetching operational status for tenant id: {}", tenantId);
 
-                Tenant tenant = this.getTenantById(tenantId);
+                Shop tenant = this.getTenantById(tenantId);
 
-                return TenantStatusResponse.builder()
+                return ShopStatusResponse.builder()
                                 .tenantStatus(tenant.getStatus())
                                 .isSuspended(tenant.getStatus() != Status.ACTIVE)
                                 .build();
@@ -155,7 +155,7 @@ public class TenantService {
                         throw ResourceException.accessDenied();
                 }
                 log.info("Deactivating tenant id: {}", tenantId);
-                Tenant tenant = tenantRepository.findById(tenantId)
+                Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
 
                 tenant.setStatus(Status.INACTIVE);
@@ -163,13 +163,13 @@ public class TenantService {
 
                 fireAuditEvent(AuditAction.STATUS_CHANGE, tenant.getId(), tenant.getName(),
                         Map.of("status", Status.INACTIVE.name()),
-                        "Tenant deactivated by owner");
+                        "Shop deactivated by owner");
         }
 
         @Transactional
         public void reactivateTenant(Long tenantId) {
                 log.info("Reactivating tenant id: {}", tenantId);
-                Tenant tenant = tenantRepository.findById(tenantId)
+                Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
 
                 tenant.setStatus(Status.ACTIVE);
@@ -177,28 +177,28 @@ public class TenantService {
 
                 fireAuditEvent(AuditAction.STATUS_CHANGE, tenant.getId(), tenant.getName(),
                         Map.of("status", Status.ACTIVE.name()),
-                        "Tenant reactivated");
+                        "Shop reactivated");
         }
 
         // ================== Admin Query Methods ==================
 
         @Transactional(readOnly = true)
-        public Optional<Tenant> findTenantByIdOptional(Long tenantId) {
+        public Optional<Shop> findTenantByIdOptional(Long tenantId) {
                 return tenantRepository.findById(tenantId);
         }
 
         @Transactional(readOnly = true)
-        public Page<Tenant> getTenantsByStatus(Status status, Pageable pageable) {
+        public Page<Shop> getTenantsByStatus(Status status, Pageable pageable) {
                 return tenantRepository.findByStatus(status, pageable);
         }
 
         @Transactional(readOnly = true)
-        public List<Tenant> getTenantsByStatusList(Status status) {
+        public List<Shop> getTenantsByStatusList(Status status) {
                 return tenantRepository.findAllByStatus(status);
         }
 
         @Transactional(readOnly = true)
-        public Page<Tenant> getAllTenantsPaged(Pageable pageable) {
+        public Page<Shop> getAllTenantsPaged(Pageable pageable) {
                 return tenantRepository.findAll(pageable);
         }
 
@@ -224,7 +224,7 @@ public class TenantService {
                                 .changesAfter(changes)
                                 .description(description)
                                 .module("TENANT_MANAGEMENT")
-                                .build(), "Tenant", entityId);
+                                .build(), "Shop", entityId);
                 } catch (Exception e) {
                         log.warn("Failed to fire audit event: {}", e.getMessage());
                 }

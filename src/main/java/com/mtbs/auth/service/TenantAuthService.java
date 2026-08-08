@@ -3,7 +3,7 @@ package com.mtbs.auth.service;
 import com.mtbs.auth.dto.auth.*;
 import com.mtbs.auth.entity.RefreshToken;
 import com.mtbs.auth.entity.Role;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.auth.entity.User;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.enums.notification.NotificationEvent;
@@ -17,7 +17,7 @@ import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.auth.repository.RoleRepository;
 import com.mtbs.auth.repository.UserRepository;
 import com.mtbs.auth.security.JwtTokenProvider;
-import com.mtbs.tenant.repository.TenantRepository;
+import com.mtbs.tenant.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,12 +56,12 @@ public class TenantAuthService {
      * Creates the ROLE_OWNER user for the new signup flow.
      * Called by SignupService AFTER TenantContext.setTenantId() has been called.
      *
-     * Difference from createOwnerUser(TenantRegisterRequest, Tenant):
+     * Difference from createOwnerUser(TenantRegisterRequest, Shop):
      *  - Takes SignupRequest (name + email + password only — no company details yet)
      *  - The user's name is a personal name at this stage, not the company name
      */
     @Transactional
-    public AuthResponse createOwnerUserForSignup(SignupRequest request, Tenant tenant, TokenPair tokenPair) {
+    public AuthResponse createOwnerUserForSignup(SignupRequest request, Shop tenant, TokenPair tokenPair) {
         log.info("Creating ROLE_OWNER user for signup, tenantId={}", tenant.getId());
 
         Role ownerRole = roleRepository.findByName("OWNER")
@@ -112,7 +112,7 @@ public class TenantAuthService {
     }
 
     @Transactional
-    public AuthResponse loginInTenantSchema(LoginRequest request, Tenant tenant, String ipAddress, String deviceInfo, TokenPair tokenPair) {
+    public AuthResponse loginInTenantSchema(LoginRequest request, Shop tenant, String ipAddress, String deviceInfo, TokenPair tokenPair) {
         log.info("Processing login in tenant schema...");
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -197,7 +197,7 @@ public class TenantAuthService {
     }
 
     @Transactional
-    public AuthResponse refreshInTenantSchema(RefreshTokenRequest request, Tenant tenant, TokenPair tokenPair) {
+    public AuthResponse refreshInTenantSchema(RefreshTokenRequest request, Shop tenant, TokenPair tokenPair) {
         log.info("Refreshing token in tenant schema...");
 
         RefreshToken validToken = refreshTokenService.validateRefreshToken(request.getRefreshToken());
@@ -245,7 +245,7 @@ public class TenantAuthService {
 
     @Transactional
     public void logoutInTenantSchema(String refreshToken, Long userId, String userEmail, 
-                                     String userName, String role, Tenant tenant,
+                                     String userName, String role, Shop tenant,
                                      String ipAddress, String userAgent) {
         log.info("Logging out user in tenant schema...");
         refreshTokenService.revokeToken(refreshToken);
@@ -270,7 +270,7 @@ public class TenantAuthService {
     }
 
     @Transactional(readOnly = true)
-    public UserProfileResponse getCurrentUserProfile(Long userId, Tenant tenant) {
+    public UserProfileResponse getCurrentUserProfile(Long userId, Shop tenant) {
         log.info("Fetching user profile in tenant schema...");
 
         User user = userRepository.findById(userId)

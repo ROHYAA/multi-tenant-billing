@@ -1,9 +1,9 @@
 package com.mtbs.business.payment.controller;
 
-import com.mtbs.business.payment.dto.BusinessPaymentResponse;
+import com.mtbs.business.payment.dto.PaymentResponse;
 import com.mtbs.business.payment.dto.RecordPaymentRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
-import com.mtbs.business.payment.service.BusinessPaymentService;
+import com.mtbs.business.payment.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,12 +26,12 @@ import java.util.List;
 @RequestMapping("/api/${api.version}/business-payments")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('PERMISSION_BILLING_MANAGE')")
-@Tag(name = "Business Payments",
+@Tag(name = "Payments",
      description = "Record and track payments received from customers against business invoices")
 @SecurityRequirement(name = "bearerAuth")
-public class BusinessPaymentController {
+public class PaymentController {
 
-    private final BusinessPaymentService paymentService;
+    private final PaymentService paymentService;
 
     // ── POST /api/business-payments/{invoiceId} ───────────────────────────────
 
@@ -48,11 +48,11 @@ public class BusinessPaymentController {
                       "an offline payment that happened in the past. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<BusinessPaymentResponse>> record(
+    public ResponseEntity<ApiResponse<PaymentResponse>> record(
             @PathVariable Long invoiceId,
             @Valid @RequestBody RecordPaymentRequest request) {
 
-        BusinessPaymentResponse response = paymentService.record(invoiceId, request);
+        PaymentResponse response = paymentService.record(invoiceId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Payment recorded successfully"));
@@ -67,10 +67,10 @@ public class BusinessPaymentController {
                       "Useful for showing a payment history timeline on the invoice detail page. " +
                       "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<ApiResponse<List<BusinessPaymentResponse>>> listByInvoice(
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> listByInvoice(
             @PathVariable Long invoiceId) {
 
-        List<BusinessPaymentResponse> response = paymentService.listByInvoice(invoiceId);
+        List<PaymentResponse> response = paymentService.listByInvoice(invoiceId);
         return ResponseEntity.ok(ApiResponse.success(response, "Payments fetched successfully"));
     }
 

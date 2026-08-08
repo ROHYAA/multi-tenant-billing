@@ -112,10 +112,10 @@ public class CustomerService {
         log.info("Customer soft-deleted — id={}", customerId);
     }
 
-    // ── Internal helper (used by BusinessInvoiceService) ─────────────────────
+    // ── Internal helper (used by BillService) ─────────────────────
 
     /**
-     * Fetches the customer entity directly — used by BusinessInvoiceService
+     * Fetches the customer entity directly — used by BillService
      * to validate the customer exists before creating an invoice.
      */
     @Transactional(readOnly = true)

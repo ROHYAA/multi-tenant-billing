@@ -1,20 +1,20 @@
 package com.mtbs.business.payment.service;
 
 import com.mtbs.business.customer.service.CustomerService;
-import com.mtbs.business.invoice.service.BusinessInvoiceService;
-import com.mtbs.business.payment.dto.BusinessPaymentResponse;
+import com.mtbs.business.invoice.service.BillService;
+import com.mtbs.business.payment.dto.PaymentResponse;
 import com.mtbs.business.payment.dto.RecordPaymentRequest;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.business.payment.entity.BusinessPayment;
-import com.mtbs.business.payment.mapper.BusinessPaymentMapper;
+import com.mtbs.business.invoice.entity.Bill;
+import com.mtbs.business.payment.entity.Payment;
+import com.mtbs.business.payment.mapper.PaymentMapper;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.shared.enums.notification.NotificationEvent;
 import com.mtbs.shared.event.bill.BillEvent;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.exception.ResourceException;
-import com.mtbs.business.payment.repository.BusinessPaymentRepository;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.business.payment.repository.PaymentRepository;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BusinessPaymentService {
+public class PaymentService {
 
-    private final BusinessPaymentRepository paymentRepository;
-    private final BusinessInvoiceService invoiceService;
+    private final PaymentRepository paymentRepository;
+    private final BillService invoiceService;
     private final CustomerService customerService;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final BusinessPaymentMapper paymentMapper;
+    private final PaymentMapper paymentMapper;
 
     // ── Record payment ────────────────────────────────────────────────────────
 
@@ -60,8 +60,8 @@ public class BusinessPaymentService {
      * Supports partial payments — call multiple times until fully paid.
      */
     @Transactional
-    public BusinessPaymentResponse record(Long invoiceId, RecordPaymentRequest request) {
-        BusinessInvoice invoice = invoiceService.getEntityById(invoiceId);
+    public PaymentResponse record(Long invoiceId, RecordPaymentRequest request) {
+        Bill invoice = invoiceService.getEntityById(invoiceId);
 
         if (invoice.getStatus() != InvoiceStatus.OPEN) {
             throw ResourceException.invalid(
@@ -83,7 +83,7 @@ public class BusinessPaymentService {
                 request.getAmount(), outstanding));
         }
 
-        BusinessPayment payment = BusinessPayment.builder()
+        Payment payment = Payment.builder()
                 .invoiceId(invoiceId)
                 .amount(request.getAmount())
                 .currency(invoice.getCurrency())
@@ -92,7 +92,7 @@ public class BusinessPaymentService {
                 .paidAt(request.getPaidAt() != null ? request.getPaidAt() : java.time.Instant.now())
                 .build();
 
-        BusinessPayment saved = paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
         log.info("Payment recorded — id={}, invoiceId={}, amount={}, method={}",
                 saved.getId(), invoiceId, saved.getAmount(), saved.getMethod());
 
@@ -113,7 +113,7 @@ public class BusinessPaymentService {
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<BusinessPaymentResponse> listByInvoice(Long invoiceId) {
+    public List<PaymentResponse> listByInvoice(Long invoiceId) {
         invoiceService.getEntityById(invoiceId);
 
         return paymentRepository.findAllByInvoiceId(invoiceId)
@@ -128,15 +128,15 @@ public class BusinessPaymentService {
      */
     @Transactional(readOnly = true)
     public BigDecimal getOutstandingBalance(Long invoiceId) {
-        BusinessInvoice invoice = invoiceService.getEntityById(invoiceId);
+        Bill invoice = invoiceService.getEntityById(invoiceId);
         BigDecimal paid = paymentRepository.sumAmountByInvoiceId(invoiceId);
         return invoice.getTotalAmount().subtract(paid).max(BigDecimal.ZERO);
     }
 
     // ── Notification ──────────────────────────────────────────────────────────
 
-    private void firePaymentEvent(BusinessInvoice invoice, Customer customer,
-                                  BusinessPayment payment) {
+    private void firePaymentEvent(Bill invoice, Customer customer,
+                                  Payment payment) {
         try {
             Long tenantId     = SecurityUtils.getCurrentTenantId();
             String tenantName = tenantService.getTenantNameById(tenantId);
@@ -162,7 +162,7 @@ public class BusinessPaymentService {
                     .recipientName(customer.getName())
                     .invoiceNumber(invoice.getInvoiceNumber())
                     .invoiceAmount(invoice.getTotalAmount())
-                    .build(), "BusinessInvoice", invoice.getId());
+                    .build(), "Bill", invoice.getId());
 
         } catch (Exception e) {
             log.warn("Failed to fire BUSINESS_PAYMENT_RECORDED for invoiceId={}: {}",

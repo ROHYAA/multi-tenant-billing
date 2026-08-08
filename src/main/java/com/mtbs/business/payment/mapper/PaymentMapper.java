@@ -1,12 +1,12 @@
 package com.mtbs.business.payment.mapper;
 
-import com.mtbs.business.payment.dto.BusinessPaymentResponse;
-import com.mtbs.business.payment.entity.BusinessPayment;
+import com.mtbs.business.payment.dto.PaymentResponse;
+import com.mtbs.business.payment.entity.Payment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
-public interface BusinessPaymentMapper {
+public interface PaymentMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "invoiceId", source = "invoiceId")
@@ -17,5 +17,5 @@ public interface BusinessPaymentMapper {
     @Mapping(target = "paidAt", source = "paidAt")
     @Mapping(target = "razorpayPaymentLinkId", source = "razorpayPaymentLinkId")
     @Mapping(target = "createdAt", source = "createdAt")
-    BusinessPaymentResponse toResponse(BusinessPayment entity);
+    PaymentResponse toResponse(Payment entity);
 }

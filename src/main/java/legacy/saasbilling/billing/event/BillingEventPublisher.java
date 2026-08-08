@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * NOTE: publishAuthEvent() has been removed.
  *   Auth events → AuthEventPublisher
  *   Subscription events → SubscriptionEventPublisher
- *   Business billing events → BusinessEventPublisher
+ *   Business billing events → BillEventPublisher
  */
 @Component
 @RequiredArgsConstructor

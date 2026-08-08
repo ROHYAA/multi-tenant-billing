@@ -62,7 +62,7 @@ public interface PaymentGatewayPort {
      * @param customerName   Customer's name  — pre-fills the Razorpay checkout form.
      * @param customerPhone  Customer's phone — pre-fills the Razorpay checkout form.
      * @param receipt        Idempotency key / your internal reference (invoice number).
-     * @return               Razorpay Payment Link ID (plink_XXXX). Store on BusinessInvoice.
+     * @return               Razorpay Payment Link ID (plink_XXXX). Store on Bill.
      */
     String createPaymentLink(
             long amountPaise,

@@ -18,8 +18,8 @@ import java.math.BigDecimal;
  * An item in the tenant's product/service catalog.
  *
  * price and taxPercentage represent the DEFAULT values for this product.
- * When a product is added to a BusinessInvoice, these values are SNAPSHOTTED
- * onto BusinessInvoiceItem — future changes to the product do NOT retroactively
+ * When a product is added to a Bill, these values are SNAPSHOTTED
+ * onto BillItem — future changes to the product do NOT retroactively
  * affect existing invoices. This is a legal/audit requirement.
  *
  * hsnSacCode (Harmonized System Nomenclature / Services Accounting Code):

@@ -1,6 +1,6 @@
 package com.mtbs.tenant.repository;
 
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.auth.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,23 +13,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TenantRepository extends JpaRepository<Tenant, Long> {
+public interface ShopRepository extends JpaRepository<Shop, Long> {
 
-    Optional<Tenant> findBySchemaName(String schemaName);
+    Optional<Shop> findBySchemaName(String schemaName);
 
-    Optional<Tenant> findByName(String name);
+    Optional<Shop> findByName(String name);
 
     boolean existsBySchemaName(String schemaName);
 
     boolean existsByName(String name);
 
-    List<Tenant> findAllByStatus(Status status);
+    List<Shop> findAllByStatus(Status status);
 
-    Page<Tenant> findByStatus(Status status, Pageable pageable);
+    Page<Shop> findByStatus(Status status, Pageable pageable);
 
     boolean existsByOwnerEmail(String email);
 
     boolean existsBySlug(String slug);
 
-    Optional<Tenant> findBySlug(String slug);
+    Optional<Shop> findBySlug(String slug);
 }

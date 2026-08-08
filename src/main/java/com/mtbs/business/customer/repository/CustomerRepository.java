@@ -50,7 +50,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
      */
     @Query("""
         SELECT COUNT(i) > 0
-        FROM BusinessInvoice i
+        FROM Bill i
         WHERE i.customerId = :customerId
           AND i.status <> com.mtbs.shared.enums.bill.InvoiceStatus.VOID
         """)

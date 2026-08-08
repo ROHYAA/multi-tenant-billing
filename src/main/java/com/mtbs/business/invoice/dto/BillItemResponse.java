@@ -11,7 +11,7 @@ import java.math.BigDecimal;
  
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BusinessInvoiceItemResponse {
+public class BillItemResponse {
  
     private Long       id;
  

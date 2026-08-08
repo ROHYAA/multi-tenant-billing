@@ -1,8 +1,6 @@
-package legacy.saasbilling.admin.controller;
+package legacy.saasbilling.admin;
 
-import legacy.saasbilling.admin.AdminMetrics;
 import com.mtbs.shared.dto.common.ApiResponse;
-import legacy.saasbilling.admin.AdminMetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

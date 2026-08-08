@@ -11,7 +11,7 @@ import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.shared.util.SecurityUtils;
 import com.mtbs.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserScopedService userScopedService;
     private final PasswordEncoder passwordEncoder;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final OutboxEventPublisher outboxEventPublisher;
     private final UserMapper userMapper;
     private final PermissionCacheService permissionCacheService;

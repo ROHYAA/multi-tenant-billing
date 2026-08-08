@@ -1,8 +1,8 @@
 package com.mtbs.auth.service;
 
 import com.mtbs.shared.exception.TenantException;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.List;
 @Slf4j
 public class SlugGeneratorService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
 
     public String generateSlug(String tenantName) {
         String base = tenantName == null ? "tenant" : tenantName;
@@ -76,7 +76,7 @@ public class SlugGeneratorService {
     }
 
     public List<TenantOption> resolveTenantsForEmail(String email) {
-        List<Tenant> allTenants = tenantService.getAllTenants();
+        List<Shop> allTenants = tenantService.getAllTenants();
 
         return allTenants.stream()
                 .filter(t -> email != null && email.equalsIgnoreCase(t.getOwnerEmail()))

@@ -1,12 +1,12 @@
 package com.mtbs.business.invoice.mapper;
 
-import com.mtbs.business.invoice.dto.BusinessInvoiceResponse;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
+import com.mtbs.business.invoice.dto.BillResponse;
+import com.mtbs.business.invoice.entity.Bill;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
-public interface BusinessInvoiceMapper {
+public interface BillMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "invoiceNumber", source = "invoiceNumber")
@@ -25,10 +25,10 @@ public interface BusinessInvoiceMapper {
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "updatedAt", source = "updatedAt")
-    BusinessInvoiceResponse toResponse(BusinessInvoice entity);
+    BillResponse toResponse(Bill entity);
 
-    default BusinessInvoiceResponse toResponseWithCustomer(BusinessInvoice entity, String customerName, String customerEmail) {
-        BusinessInvoiceResponse response = toResponse(entity);
+    default BillResponse toResponseWithCustomer(Bill entity, String customerName, String customerEmail) {
+        BillResponse response = toResponse(entity);
         response.setCustomerName(customerName);
         response.setCustomerEmail(customerEmail);
         return response;

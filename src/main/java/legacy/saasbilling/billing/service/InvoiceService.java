@@ -22,7 +22,7 @@ import com.mtbs.shared.multitenancy.TenantContext;
 import legacy.saasbilling.billing.repository.InvoiceLineItemRepository;
 import legacy.saasbilling.billing.repository.InvoiceRepository;
 import legacy.saasbilling.tenant.service.PlanService;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -63,7 +63,7 @@ public class InvoiceService {
     private final SubscriptionRepository subscriptionRepository;
     private final PlanService planService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final InvoiceMapper invoiceMapper;
     private final InvoiceLineItemMapper lineItemMapper;
 
@@ -276,7 +276,7 @@ public class InvoiceService {
 
     private void fireInvoiceEvent(NotificationEvent eventType, Invoice invoice, Plan plan) {
         try {
-            BillEvent.BillingEventBuilder builder = BillEvent.builder()
+            BillEvent.BillEventBuilder builder = BillEvent.builder()
                     .eventType(eventType)
                     .invoiceNumber(invoice.getInvoiceNumber())
                     .invoiceAmount(invoice.getTotalAmount())

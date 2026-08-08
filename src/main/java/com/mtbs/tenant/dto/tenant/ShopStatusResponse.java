@@ -12,7 +12,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TenantStatusResponse {
+public class ShopStatusResponse {
 
     private boolean isSuspended;
     private Status tenantStatus;

@@ -1,16 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// FILE: com/mtbs/service/business/BusinessReportService.java
+// FILE: com/mtbs/service/business/ReportService.java
 // ─────────────────────────────────────────────────────────────────────────────
 package com.mtbs.business.report.service;
 
 import com.mtbs.business.report.dto.MonthlyReportRow;
 import com.mtbs.business.report.dto.OutstandingReportResponse;
 import com.mtbs.business.report.dto.RevenueReportResponse;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
+import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.shared.enums.bill.PaymentMethod;
-import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.business.payment.repository.BusinessPaymentRepository;
+import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.business.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,10 +30,10 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BusinessReportService {
+public class ReportService {
 
-    private final BusinessInvoiceRepository invoiceRepository;
-    private final BusinessPaymentRepository paymentRepository;
+    private final BillRepository invoiceRepository;
+    private final PaymentRepository paymentRepository;
 
     // ── Revenue report ────────────────────────────────────────────────────────
 
@@ -50,13 +50,13 @@ public class BusinessReportService {
         if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
         // Count paid invoices in period
-        List<BusinessInvoice> paidInvoices = invoiceRepository
+        List<Bill> paidInvoices = invoiceRepository
                 .findAllByStatusAndCreatedAtBetween(InvoiceStatus.PAID, from, to);
 
         BigDecimal avgInvoiceValue = BigDecimal.ZERO;
         if (!paidInvoices.isEmpty()) {
             BigDecimal totalInvoiceValue = paidInvoices.stream()
-                    .map(BusinessInvoice::getTotalAmount)
+                    .map(Bill::getTotalAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             avgInvoiceValue = totalInvoiceValue
                     .divide(BigDecimal.valueOf(paidInvoices.size()), 2, RoundingMode.HALF_UP);
@@ -108,15 +108,15 @@ public class BusinessReportService {
         log.info("Outstanding report requested");
 
         Instant now              = Instant.now();
-        List<BusinessInvoice> allOpen  = invoiceRepository.findAllOpen();
-        List<BusinessInvoice> overdue  = invoiceRepository.findAllOverdue(now);
+        List<Bill> allOpen  = invoiceRepository.findAllOpen();
+        List<Bill> overdue  = invoiceRepository.findAllOverdue(now);
 
         BigDecimal overdueAmount  = sum(overdue);
         BigDecimal currentAmount  = sum(allOpen).subtract(overdueAmount).max(BigDecimal.ZERO);
         BigDecimal totalOutstanding = sum(allOpen);
 
         List<OutstandingReportResponse.OutstandingItem> items = new ArrayList<>();
-        for (BusinessInvoice invoice : allOpen) {
+        for (Bill invoice : allOpen) {
             BigDecimal paid        = paymentRepository.sumAmountByInvoiceId(invoice.getId());
             BigDecimal outstanding = invoice.getTotalAmount()
                     .subtract(paid != null ? paid : BigDecimal.ZERO)
@@ -163,7 +163,7 @@ public class BusinessReportService {
             Instant from      = ym.atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC);
             Instant to        = ym.atEndOfMonth().atTime(23, 59, 59).toInstant(ZoneOffset.UTC);
 
-            List<BusinessInvoice> invoicesInMonth = invoiceRepository
+            List<Bill> invoicesInMonth = invoiceRepository
                     .findAllByCreatedAtBetween(from, to);
 
             BigDecimal invoiceTotal = sum(invoicesInMonth);
@@ -188,9 +188,9 @@ public class BusinessReportService {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private BigDecimal sum(List<BusinessInvoice> invoices) {
+    private BigDecimal sum(List<Bill> invoices) {
         return invoices.stream()
-                .map(BusinessInvoice::getTotalAmount)
+                .map(Bill::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

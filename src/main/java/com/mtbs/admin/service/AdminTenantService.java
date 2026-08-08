@@ -4,17 +4,17 @@ import com.mtbs.admin.dto.AdminTenantDetailResponse;
 import com.mtbs.admin.dto.AdminTenantListResponse;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.auth.service.PermissionCacheService;
-import com.mtbs.tenant.dto.tenant.TenantResponse;
+import com.mtbs.tenant.dto.tenant.ShopResponse;
 import com.mtbs.auth.dto.user.UserResponse;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.mapper.TenantMapper;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.mapper.ShopMapper;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.TenantException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +40,11 @@ import java.util.Map;
 @Slf4j
 public class AdminTenantService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final AdminTenantScopedService adminTenantScopedService;
     private final JdbcTemplate jdbcTemplate;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final TenantMapper tenantMapper;
+    private final ShopMapper tenantMapper;
     private final PermissionCacheService permissionCacheService;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -53,7 +53,7 @@ public class AdminTenantService {
     public Page<AdminTenantListResponse> getAllTenants(Status status, Pageable pageable) {
         log.info("Admin fetching all tenants. Filters -> status: {}", status);
 
-        Page<Tenant> tenants = status != null
+        Page<Shop> tenants = status != null
                 ? tenantService.getTenantsByStatus(status, pageable)
                 : tenantService.getAllTenantsPaged(pageable);
 
@@ -63,7 +63,7 @@ public class AdminTenantService {
     @Transactional(readOnly = true)
     public AdminTenantDetailResponse getTenantDetail(Long tenantId) {
         log.info("Admin fetching tenant details: {}", tenantId);
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         String schema = "\"" + tenant.getSchemaName() + "\"";
 
@@ -82,11 +82,11 @@ public class AdminTenantService {
     }
 
     @Transactional
-    public TenantResponse changeTenantStatus(Long tenantId, ChangeTenantStatusRequest request) {
+    public ShopResponse changeTenantStatus(Long tenantId, ChangeTenantStatusRequest request) {
         log.info("Admin changing tenant status: {} to {}", tenantId, request.getStatus());
 
         tenantService.updateTenantStatus(tenantId, request.getStatus());
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         permissionCacheService.evictTenant(tenant.getSchemaName());
 
@@ -111,7 +111,7 @@ public class AdminTenantService {
 
     public Page<UserResponse> getTenantUsers(Long tenantId, Pageable pageable) {
         log.info("Admin fetching users for tenant: {}", tenantId);
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         TenantContext.setTenantId(tenant.getId());
         try {
@@ -125,7 +125,7 @@ public class AdminTenantService {
     @Transactional
     public void deleteTenant(Long tenantId) {
         log.info("Admin soft deleting tenant: {}", tenantId);
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         tenant.setDeleted(true);
         tenant.setDeletedAt(Instant.now());
@@ -148,7 +148,7 @@ public class AdminTenantService {
                 .build());
     }
 
-    private AdminTenantListResponse mapToListResponse(Tenant tenant) {
+    private AdminTenantListResponse mapToListResponse(Shop tenant) {
         String schema = "\"" + tenant.getSchemaName() + "\"";
         Long userCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM " + schema + ".users WHERE deleted = false", Long.class);

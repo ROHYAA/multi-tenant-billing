@@ -1,7 +1,7 @@
 package com.mtbs.auth.service;
 
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,7 +18,7 @@ public class SlugCacheService {
     private static final Duration CACHE_TTL = Duration.ofHours(1);
 
     private final StringRedisTemplate stringRedisTemplate;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
 
     public Long resolveTenantId(String slug) {
         String normalizedSlug = slug.toLowerCase().trim();
@@ -30,7 +30,7 @@ public class SlugCacheService {
             return Long.parseLong(cached);
         }
 
-        Tenant tenant = tenantService.findTenantBySlug(normalizedSlug);
+        Shop tenant = tenantService.findTenantBySlug(normalizedSlug);
 
         stringRedisTemplate.opsForValue().set(
                 key,

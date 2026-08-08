@@ -1,12 +1,12 @@
 package com.mtbs.business.invoice.mapper;
 
-import com.mtbs.business.invoice.dto.BusinessInvoiceItemResponse;
-import com.mtbs.business.invoice.entity.BusinessInvoiceItem;
+import com.mtbs.business.invoice.dto.BillItemResponse;
+import com.mtbs.business.invoice.entity.BillItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
-public interface BusinessInvoiceItemMapper {
+public interface BillItemMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "productId", source = "productId")
@@ -16,5 +16,5 @@ public interface BusinessInvoiceItemMapper {
     @Mapping(target = "taxPercentage", source = "taxPercentage")
     @Mapping(target = "taxAmount", source = "taxAmount")
     @Mapping(target = "total", source = "total")
-    BusinessInvoiceItemResponse toResponse(BusinessInvoiceItem entity);
+    BillItemResponse toResponse(BillItem entity);
 }

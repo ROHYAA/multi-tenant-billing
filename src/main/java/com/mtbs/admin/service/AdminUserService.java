@@ -1,12 +1,12 @@
 package com.mtbs.admin.service;
 
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import com.mtbs.auth.service.UserService;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.util.SecurityUtils;
@@ -31,7 +31,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AdminUserService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final UserService userService;
     private final OutboxEventPublisher outboxEventPublisher;
 
@@ -44,7 +44,7 @@ public class AdminUserService {
     public void removeUserFromTenant(Long tenantId, Long userId) {
         log.info("Admin removing userId={} from tenantId={}", userId, tenantId);
 
-        Tenant tenant = tenantService.getTenantById(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         TenantContext.setTenantId(tenant.getId());
         TenantContext.setCurrentSchema(tenant.getSchemaName());

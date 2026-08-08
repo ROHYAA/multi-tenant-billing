@@ -16,7 +16,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Tenant extends AuditableEntity {
+public class Shop extends AuditableEntity {
 
     @Column(nullable = false)
     private String name;

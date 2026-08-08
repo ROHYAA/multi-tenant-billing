@@ -2,11 +2,11 @@ package com.mtbs.business.invoice.service;
 
 import com.itextpdf.kernel.colors.Color;
 import com.mtbs.business.customer.service.CustomerService;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.business.invoice.entity.BusinessInvoiceItem;
+import com.mtbs.business.invoice.entity.Bill;
+import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.business.customer.entity.Customer;
-import com.mtbs.business.invoice.repository.BusinessInvoiceItemRepository;
-import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
+import com.mtbs.business.invoice.repository.BillItemRepository;
+import com.mtbs.business.invoice.repository.BillRepository;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
@@ -38,7 +38,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BusinessInvoicePdfService {
+public class BillPdfService {
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC);
@@ -48,16 +48,16 @@ public class BusinessInvoicePdfService {
     private static final DeviceRgb BORDER_COLOR = new DeviceRgb(226, 232, 240);
     private static final DeviceRgb MUTED_TEXT   = new DeviceRgb(100, 116, 139);
 
-    private final BusinessInvoiceRepository invoiceRepository;
-    private final BusinessInvoiceItemRepository itemRepository;
+    private final BillRepository invoiceRepository;
+    private final BillItemRepository itemRepository;
     private final CustomerService customerService;
 
     @Transactional(readOnly = true)
     public byte[] generatePdf(Long invoiceId) {
-        BusinessInvoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> ResourceException.notFound("BusinessInvoice", invoiceId));
+        Bill invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> ResourceException.notFound("Bill", invoiceId));
 
-        List<BusinessInvoiceItem> items = itemRepository.findAllByInvoiceId(invoiceId);
+        List<BillItem> items = itemRepository.findAllByInvoiceId(invoiceId);
         Customer customer = customerService.getEntityById(invoice.getCustomerId());
 
         log.info("Generating PDF for businessInvoice={}", invoice.getInvoiceNumber());
@@ -74,8 +74,8 @@ public class BusinessInvoicePdfService {
         return pdf;
     }
 
-    private byte[] buildPdf(BusinessInvoice invoice,
-                           List<BusinessInvoiceItem> items,
+    private byte[] buildPdf(Bill invoice,
+                           List<BillItem> items,
                            Customer customer) throws Exception {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -102,7 +102,7 @@ public class BusinessInvoicePdfService {
         return baos.toByteArray();
     }
 
-    private void addHeader(Document document, BusinessInvoice invoice,
+    private void addHeader(Document document, Bill invoice,
                            PdfFont bold, PdfFont regular) {
         Table headerTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
@@ -145,7 +145,7 @@ public class BusinessInvoicePdfService {
         document.add(headerTable);
     }
 
-    private void addBillingSection(Document document, BusinessInvoice invoice,
+    private void addBillingSection(Document document, Bill invoice,
                                    Customer customer, PdfFont bold, PdfFont regular) {
         Table billingTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                 .setWidth(UnitValue.createPercentValue(100))
@@ -186,7 +186,7 @@ public class BusinessInvoicePdfService {
                 .setMarginBottom(16));
     }
 
-    private void addItemsTable(Document document, List<BusinessInvoiceItem> items,
+    private void addItemsTable(Document document, List<BillItem> items,
                                PdfFont bold, PdfFont regular) {
         Table table = new Table(UnitValue.createPercentArray(new float[]{38, 8, 14, 8, 14, 18}))
                 .setWidth(UnitValue.createPercentValue(100))
@@ -204,7 +204,7 @@ public class BusinessInvoicePdfService {
                     .setPadding(7));
         }
 
-        for (BusinessInvoiceItem item : items) {
+        for (BillItem item : items) {
             table.addCell(itemCell(item.getDescription(), regular, TextAlignment.LEFT));
             table.addCell(itemCell(item.getQuantity().toPlainString(), regular, TextAlignment.CENTER));
             table.addCell(itemCell(fmt(item.getUnitPrice()), regular, TextAlignment.RIGHT));
@@ -216,7 +216,7 @@ public class BusinessInvoicePdfService {
         document.add(table);
     }
 
-    private void addTotals(Document document, BusinessInvoice invoice,
+    private void addTotals(Document document, Bill invoice,
                            PdfFont bold, PdfFont regular) {
         Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
@@ -256,7 +256,7 @@ public class BusinessInvoicePdfService {
                 .setMarginBottom(20));
     }
 
-    private void addFooter(Document document, BusinessInvoice invoice, PdfFont regular) {
+    private void addFooter(Document document, Bill invoice, PdfFont regular) {
         document.add(new com.itextpdf.layout.element.LineSeparator(
                 new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(0.5f))
                 .setMarginBottom(10));

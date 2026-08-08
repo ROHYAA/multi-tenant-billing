@@ -1,4 +1,4 @@
-package legacy.saasbilling.tenant.controller.platform;
+package legacy.saasbilling.tenant.controller;
 
 import com.mtbs.shared.dto.common.ApiResponse;
 import legacy.saasbilling.tenant.dto.plan.CreatePlanRequest;

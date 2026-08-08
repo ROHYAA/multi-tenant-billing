@@ -13,10 +13,10 @@ import java.math.BigDecimal;
  
 /**
  * Request to add a single line item to an existing DRAFT invoice.
- * Same semantics as CreateBusinessInvoiceRequest.InvoiceLineItemRequest.
+ * Same semantics as CreateBillRequest.InvoiceLineItemRequest.
  */
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
-public class AddLineItemRequest {
+public class AddBillItemRequest {
  
     private Long productId;
  

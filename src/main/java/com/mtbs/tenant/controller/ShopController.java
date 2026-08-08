@@ -2,11 +2,11 @@ package com.mtbs.tenant.controller;
 
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.util.SecurityUtils;
-import com.mtbs.tenant.dto.tenant.TenantResponse;
-import com.mtbs.tenant.dto.tenant.TenantSchemaInfoResponse;
-import com.mtbs.tenant.dto.tenant.TenantStatusResponse;
-import com.mtbs.tenant.dto.tenant.UpdateTenantRequest;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.dto.tenant.ShopResponse;
+import com.mtbs.tenant.dto.tenant.ShopSchemaInfoResponse;
+import com.mtbs.tenant.dto.tenant.ShopStatusResponse;
+import com.mtbs.tenant.dto.tenant.UpdateShopRequest;
+import com.mtbs.tenant.service.ShopService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,38 +24,38 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/${api.version}/tenant")
 @RequiredArgsConstructor
 @Tag(name = "Tenant Management", description = "Endpoints for tenants to manage their own settings and view status")
-public class TenantController {
+public class ShopController {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
 
     @GetMapping
     @Operation(summary = "Get the current tenant's basic details")
-    public ResponseEntity<ApiResponse<TenantResponse>> getTenant() {
-        TenantResponse response = tenantService.getTenantByIdAsResponse(SecurityUtils.getCurrentTenantId());
+    public ResponseEntity<ApiResponse<ShopResponse>> getTenant() {
+        ShopResponse response = tenantService.getTenantByIdAsResponse(SecurityUtils.getCurrentTenantId());
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant details retrieved"));
     }
 
     @PutMapping
     @PreAuthorize("hasAuthority('PERMISSION_TENANT_MANAGE')")
     @Operation(summary = "Update the current tenant's details (e.g. name)")
-    public ResponseEntity<ApiResponse<TenantResponse>> updateTenant(
-            @Valid @RequestBody UpdateTenantRequest request) {
-        TenantResponse response = tenantService.updateTenant(SecurityUtils.getCurrentTenantId(), request);
+    public ResponseEntity<ApiResponse<ShopResponse>> updateTenant(
+            @Valid @RequestBody UpdateShopRequest request) {
+        ShopResponse response = tenantService.updateTenant(SecurityUtils.getCurrentTenantId(), request);
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant updated successfully"));
     }
 
     @GetMapping("/schema")
     @PreAuthorize("hasAuthority('PERMISSION_TENANT_MANAGE')")
     @Operation(summary = "Get high level counts of records belonging to this tenant's schema")
-    public ResponseEntity<ApiResponse<TenantSchemaInfoResponse>> getTenantSchemaInfo() {
-        TenantSchemaInfoResponse response = tenantService.getTenantSchemaInfo(SecurityUtils.getCurrentTenantId());
+    public ResponseEntity<ApiResponse<ShopSchemaInfoResponse>> getTenantSchemaInfo() {
+        ShopSchemaInfoResponse response = tenantService.getTenantSchemaInfo(SecurityUtils.getCurrentTenantId());
         return ResponseEntity.ok(ApiResponse.success(response, "Schema info retrieved"));
     }
 
     @GetMapping("/status")
     @Operation(summary = "Check the live status of the tenant's operation and active plan/subscription")
-    public ResponseEntity<ApiResponse<TenantStatusResponse>> getTenantStatus() {
-        TenantStatusResponse response = tenantService.getTenantStatus(SecurityUtils.getCurrentTenantId());
+    public ResponseEntity<ApiResponse<ShopStatusResponse>> getTenantStatus() {
+        ShopStatusResponse response = tenantService.getTenantStatus(SecurityUtils.getCurrentTenantId());
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant status retrieved"));
     }
 

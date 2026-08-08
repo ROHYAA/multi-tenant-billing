@@ -1,4 +1,4 @@
-package legacy.saasbilling.admin.dto;
+package legacy.saasbilling.admin;
 
 import lombok.*;
 

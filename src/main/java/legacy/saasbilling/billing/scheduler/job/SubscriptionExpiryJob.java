@@ -1,11 +1,11 @@
 package legacy.saasbilling.billing.scheduler.job;
 
 import legacy.saasbilling.billing.entity.Subscription;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.auth.Status;
 import legacy.saasbilling.shared.enums.SubscriptionStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import legacy.saasbilling.billing.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +22,15 @@ import java.util.List;
 @Slf4j
 public class SubscriptionExpiryJob implements Job {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final SubscriptionService subscriptionService;
 
     @Override
     public void execute(JobExecutionContext context) {
         log.info("Starting SubscriptionExpiryJob");
-        List<Tenant> tenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
+        List<Shop> tenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
 
-        for (Tenant tenant : tenants) {
+        for (Shop tenant : tenants) {
             try {
                 TenantContext.setTenantId(tenant.getId());
                 TenantContext.setCurrentSchema(tenant.getSchemaName());

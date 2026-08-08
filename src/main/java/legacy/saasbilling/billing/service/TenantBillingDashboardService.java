@@ -5,10 +5,9 @@ import legacy.saasbilling.billing.dto.UsageLimitsResponse;
 import legacy.saasbilling.billing.entity.Subscription;
 import legacy.saasbilling.billing.repository.InvoiceRepository;
 import legacy.saasbilling.billing.repository.PaymentRepository;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.business.payment.repository.BusinessPaymentRepository;
-import com.mtbs.business.payment.entity.BusinessPayment;
+import com.mtbs.business.invoice.entity.Bill;
+import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.business.payment.entity.Payment;
 import legacy.saasbilling.shared.enums.AlertSeverity;
 import legacy.saasbilling.shared.enums.AlertType;
 import legacy.saasbilling.shared.enums.SubscriptionStatus;
@@ -39,8 +38,8 @@ public class TenantBillingDashboardService {
     private final UsageService usageService;
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
-    private final BusinessInvoiceRepository businessInvoiceRepository;
-    private final BusinessPaymentRepository businessPaymentRepository;
+    private final BillRepository businessInvoiceRepository;
+    private final com.mtbs.business.payment.repository.PaymentRepository businessPaymentRepository;
 
     @Cacheable(value = "dashboard", key = "'tenant:' + #root.targetClass.name + ':' + T(com.mtbs.shared.util.SecurityUtils).getCurrentTenantId() + ':' + #days")
     @Transactional(readOnly = true)
@@ -162,10 +161,10 @@ public class TenantBillingDashboardService {
 
     private TenantBillingDashboard.InvoiceSummary buildRecentInvoice(Subscription sub) {
         try {
-            List<BusinessInvoice> paidInvoices =
+            List<Bill> paidInvoices =
                     businessInvoiceRepository.findAllPaid();
             if (!paidInvoices.isEmpty()) {
-                BusinessInvoice bi = paidInvoices.get(0);
+                Bill bi = paidInvoices.get(0);
                 return TenantBillingDashboard.InvoiceSummary.builder()
                         .invoiceId(bi.getId())
                         .invoiceNumber(bi.getInvoiceNumber())
@@ -195,7 +194,7 @@ public class TenantBillingDashboardService {
         try {
             total = businessPaymentRepository.countAll();
             
-            List<BusinessPayment> successfulPayments = businessPaymentRepository.findAllSuccessful();
+            List<Payment> successfulPayments = businessPaymentRepository.findAllSuccessful();
             succeeded = successfulPayments.size();
             
             lifetimeValue = businessPaymentRepository.sumAllSuccessful();
@@ -207,7 +206,7 @@ public class TenantBillingDashboardService {
             }
 
             if (!successfulPayments.isEmpty()) {
-                BusinessPayment lastPayment = successfulPayments.get(0);
+                Payment lastPayment = successfulPayments.get(0);
                 lastPaymentDate = lastPayment.getPaidAt();
                 lastPaymentStatus = "SUCCEEDED";
             }
@@ -244,25 +243,25 @@ public class TenantBillingDashboardService {
             Instant periodEnd = sub != null ? sub.getCurrentPeriodEnd() : null;
 
             if (periodStart != null && periodEnd != null) {
-                List<com.mtbs.business.invoice.entity.BusinessInvoice> periodInvoices = 
+                List<com.mtbs.business.invoice.entity.Bill> periodInvoices = 
                         businessInvoiceRepository.findAllPaidBetween(periodStart, periodEnd);
                 currentPeriodRevenue = periodInvoices.stream()
-                        .map(com.mtbs.business.invoice.entity.BusinessInvoice::getTotalAmount)
+                        .map(com.mtbs.business.invoice.entity.Bill::getTotalAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
             }
 
-            List<com.mtbs.business.invoice.entity.BusinessInvoice> allPaidInvoices = 
+            List<com.mtbs.business.invoice.entity.Bill> allPaidInvoices = 
                     businessInvoiceRepository.findAllPaid();
             lifetimeRevenue = allPaidInvoices.stream()
-                    .map(com.mtbs.business.invoice.entity.BusinessInvoice::getTotalAmount)
+                    .map(com.mtbs.business.invoice.entity.Bill::getTotalAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             if (!allPaidInvoices.isEmpty()) {
-                com.mtbs.business.invoice.entity.BusinessInvoice lastInvoice = allPaidInvoices.get(0);
+                com.mtbs.business.invoice.entity.Bill lastInvoice = allPaidInvoices.get(0);
                 if (lastInvoice.getPaidAt() != null) {
                     lastPaymentDate = lastInvoice.getPaidAt();
                     
-                    List<BusinessPayment> lastInvoicePayments = 
+                    List<Payment> lastInvoicePayments = 
                             businessPaymentRepository.findAllByInvoiceId(lastInvoice.getId());
                     if (!lastInvoicePayments.isEmpty()) {
                         lastPaymentAmount = lastInvoicePayments.get(0).getAmount();

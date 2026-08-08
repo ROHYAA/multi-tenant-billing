@@ -8,9 +8,9 @@ import com.mtbs.shared.enums.billing.BillingCycle;
 import com.mtbs.shared.enums.billing.SubscriptionStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.tenant.entity.Plan;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.tenant.repository.PlanRepository;
-import com.mtbs.tenant.repository.TenantRepository;
+import com.mtbs.tenant.repository.ShopRepository;
 import com.mtbs.auth.repository.RoleRepository;
 import com.mtbs.auth.repository.UserRepository;
 import com.mtbs.billing.repository.SubscriptionRepository;
@@ -27,7 +27,7 @@ import java.util.UUID;
 @Slf4j
 public class TestDataBuilder {
 
-    private final TenantRepository tenantRepository;
+    private final ShopRepository tenantRepository;
     private final PlanRepository planRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -76,7 +76,7 @@ public class TestDataBuilder {
 
     public static class TenantBuilder {
         private final TestDataBuilder builder;
-        private String name = "Test Tenant";
+        private String name = "Test Shop";
         private String schemaName = "test_" + UUID.randomUUID().toString().substring(0, 8);
         private String ownerEmail = DEFAULT_TEST_EMAIL;
         private Status status = Status.ACTIVE;
@@ -105,8 +105,8 @@ public class TestDataBuilder {
             return this;
         }
 
-        public Tenant build() {
-            Tenant tenant = Tenant.builder()
+        public Shop build() {
+            Shop tenant = Shop.builder()
                     .name(name)
                     .schemaName(schemaName)
                     .ownerEmail(ownerEmail)
@@ -115,8 +115,8 @@ public class TestDataBuilder {
             return builder.tenantRepository.save(tenant);
         }
 
-        public Tenant buildAndSetContext() {
-            Tenant tenant = build();
+        public Shop buildAndSetContext() {
+            Shop tenant = build();
             TenantContext.setTenantId(tenant.getId());
             TenantContext.setCurrentSchema(tenant.getSchemaName());
             return tenant;

@@ -14,7 +14,7 @@ import java.util.List;
  
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BusinessInvoiceResponse {
+public class BillResponse {
  
     private Long   id;
  
@@ -58,7 +58,7 @@ public class BusinessInvoiceResponse {
  
     // ── Line items ────────────────────────────────────────────────────────────
  
-    private List<BusinessInvoiceItemResponse> items;
+    private List<BillItemResponse> items;
  
     private Instant createdAt;
     private Instant updatedAt;

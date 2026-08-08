@@ -1,13 +1,13 @@
 package com.mtbs.auth.service;
 
 import com.mtbs.auth.dto.auth.*;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.exception.TenantException;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.shared.util.CookieUtils;
 import com.mtbs.shared.util.SecurityUtils;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +17,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Tenant auth orchestrator — public schema routing only.
+ * Shop auth orchestrator — public schema routing only.
  *
  * Responsibilities:
- *  - Look up the Tenant row in public schema via slug
+ *  - Look up the Shop row in public schema via slug
  *  - Enforce tenant-level status guards
  *  - Set TenantContext BEFORE delegating to TenantAuthService
  *  - Always clear TenantContext in a finally block
@@ -33,7 +33,7 @@ import java.util.List;
 @Slf4j
 public class AuthService {
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final TenantAuthService tenantAuthService;
     private final SlugCacheService slugCacheService;
     private final SchemaCacheService schemaCacheService;
@@ -49,7 +49,7 @@ public class AuthService {
         Long tenantId = slugCacheService.resolveTenantId(request.getTenantSlug());
 
         // Step 2: Load full tenant with plan for status check
-        Tenant tenant = tenantService.getTenantByIdWithPlan(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         // Hard-block suspended / deactivated tenants only
         if (tenant.getStatus() == Status.SUSPENDED || tenant.getStatus() == Status.INACTIVE) {
@@ -108,7 +108,7 @@ public class AuthService {
         Long tenantId = slugCacheService.resolveTenantId(request.getTenantSlug());
 
         // Step 2: Load tenant with plan for status check
-        Tenant tenant = tenantService.getTenantByIdWithPlan(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         // Allow refresh for ACTIVE and PENDING_ONBOARDING tenants
         if (tenant.getStatus() == Status.SUSPENDED || tenant.getStatus() == Status.INACTIVE) {
@@ -168,7 +168,7 @@ public class AuthService {
             }
         }
 
-        Tenant tenant = tenantService.getTenantByIdWithPlan(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         Long userId = SecurityUtils.getCurrentUserId();
         String userEmail = SecurityUtils.getCurrentUserEmail();
@@ -194,7 +194,7 @@ public class AuthService {
     public UserProfileResponse getCurrentUserProfile(Long userId, Long tenantId) {
         log.info("Fetching profile for userId={}, tenantId={}", userId, tenantId);
 
-        Tenant tenant = tenantService.getTenantByIdWithPlan(tenantId);
+        Shop tenant = tenantService.getTenantById(tenantId);
 
         TenantContext.setTenantId(tenant.getId());
         TenantContext.setCurrentSchema(tenant.getSchemaName());
@@ -205,7 +205,7 @@ public class AuthService {
         }
     }
 
-    // ── Tenant Resolution (for two-step login) ───────────────────────────────
+    // ── Shop Resolution (for two-step login) ───────────────────────────────
 
     public List<SlugGeneratorService.TenantOption> resolveTenantsForEmail(String email) {
         return slugGeneratorService.resolveTenantsForEmail(email);

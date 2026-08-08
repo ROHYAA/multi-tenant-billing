@@ -3,8 +3,8 @@ package com.mtbs.tenant;
 import com.mtbs.app.MultiTenantBillingSystemApplication;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestSchemaHelper;
-import com.mtbs.tenant.entity.Tenant;
-import com.mtbs.tenant.repository.TenantRepository;
+import com.mtbs.tenant.entity.Shop;
+import com.mtbs.tenant.repository.ShopRepository;
 import com.mtbs.tenant.service.TenantFlywayMigrationService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ class TenantFlywayMigrationServiceTest {
     private TenantFlywayMigrationService flywayMigrationService;
 
     @Autowired
-    private TenantRepository tenantRepository;
+    private ShopRepository tenantRepository;
 
     @Autowired
     private TestSchemaHelper testSchemaHelper;

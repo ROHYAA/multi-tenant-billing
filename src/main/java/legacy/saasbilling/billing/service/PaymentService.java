@@ -24,7 +24,7 @@ import com.mtbs.shared.multitenancy.TenantContext;
 import legacy.saasbilling.billing.repository.InvoiceRepository;
 import legacy.saasbilling.billing.repository.PaymentRepository;
 import legacy.saasbilling.billing.gateway.PaymentGatewayPort;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -53,7 +53,7 @@ public class PaymentService {
     private final PaymentGatewayPort paymentGateway;
     private final OutboxEventPublisher outboxEventPublisher;
     private final SubscriptionRepository subscriptionRepository;
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final PaymentMapper paymentMapper;
 
 

@@ -1,12 +1,12 @@
 package com.mtbs.business;
 
 import com.mtbs.app.MultiTenantBillingSystemApplication;
-import com.mtbs.business.invoice.dto.AddLineItemRequest;
-import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.business.invoice.entity.BusinessInvoiceItem;
-import com.mtbs.business.invoice.repository.BusinessInvoiceItemRepository;
-import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.business.invoice.service.BusinessInvoiceService;
+import com.mtbs.business.invoice.dto.AddBillItemRequest;
+import com.mtbs.business.invoice.entity.Bill;
+import com.mtbs.business.invoice.entity.BillItem;
+import com.mtbs.business.invoice.repository.BillItemRepository;
+import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.business.invoice.service.BillService;
 import com.mtbs.shared.enums.billing.InvoiceStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestSchemaHelper;
@@ -21,17 +21,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = MultiTenantBillingSystemApplication.class)
 @ActiveProfiles("test")
-@DisplayName("BusinessInvoiceService Integration Tests")
-class BusinessInvoiceServiceTest {
+@DisplayName("BillService Integration Tests")
+class BillServiceTest {
 
     @Autowired
-    private BusinessInvoiceService businessInvoiceService;
+    private BillService businessInvoiceService;
 
     @Autowired
-    private BusinessInvoiceRepository businessInvoiceRepository;
+    private BillRepository businessInvoiceRepository;
 
     @Autowired
-    private BusinessInvoiceItemRepository businessInvoiceItemRepository;
+    private BillItemRepository businessInvoiceItemRepository;
 
     @Autowired
     private TestSchemaHelper testSchemaHelper;
@@ -58,7 +58,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("addLineItem to draft invoice recalculates totals")
         void addLineItem_toDraftInvoice_recalculatesTotals() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-001")
                 .status(InvoiceStatus.DRAFT)
                 .subtotal(BigDecimal.ZERO)
@@ -67,7 +67,7 @@ class BusinessInvoiceServiceTest {
                 .customerId(1L)
                 .build());
 
-            AddLineItemRequest request = AddLineItemRequest.builder()
+            AddBillItemRequest request = AddBillItemRequest.builder()
                 .description("Test Item")
                 .quantity(new BigDecimal("2"))
                 .unitPrice(new BigDecimal("100"))
@@ -83,7 +83,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("addLineItem to open invoice throws ResourceException")
         void addLineItem_toOpenInvoice_throwsResourceException() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-002")
                 .status(InvoiceStatus.OPEN)
                 .subtotal(BigDecimal.ZERO)
@@ -92,7 +92,7 @@ class BusinessInvoiceServiceTest {
                 .customerId(1L)
                 .build());
 
-            AddLineItemRequest request = AddLineItemRequest.builder()
+            AddBillItemRequest request = AddBillItemRequest.builder()
                 .description("Test Item")
                 .quantity(BigDecimal.ONE)
                 .unitPrice(new BigDecimal("100"))
@@ -111,7 +111,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("removeLineItem recalculates total")
         void removeLineItem_recalculatesTotal() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-003")
                 .status(InvoiceStatus.DRAFT)
                 .subtotal(new BigDecimal("200"))
@@ -120,7 +120,7 @@ class BusinessInvoiceServiceTest {
                 .customerId(1L)
                 .build());
 
-            BusinessInvoiceItem item = businessInvoiceItemRepository.save(BusinessInvoiceItem.builder()
+            BillItem item = businessInvoiceItemRepository.save(BillItem.builder()
                 .invoice(invoice)
                 .description("Test Item")
                 .quantity(BigDecimal.ONE)
@@ -129,14 +129,14 @@ class BusinessInvoiceServiceTest {
 
             businessInvoiceService.removeLineItem(invoice.getId(), item.getId());
 
-            BusinessInvoice updated = businessInvoiceRepository.findById(invoice.getId()).orElseThrow();
+            Bill updated = businessInvoiceRepository.findById(invoice.getId()).orElseThrow();
             assertEquals(BigDecimal.ZERO, updated.getTotalAmount());
         }
 
         @Test
         @DisplayName("removeLineItem does not cause orphan removal exception")
         void removeLineItem_noOrphanRemovalException() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-004")
                 .status(InvoiceStatus.DRAFT)
                 .subtotal(new BigDecimal("100"))
@@ -145,7 +145,7 @@ class BusinessInvoiceServiceTest {
                 .customerId(1L)
                 .build());
 
-            BusinessInvoiceItem item = businessInvoiceItemRepository.save(BusinessInvoiceItem.builder()
+            BillItem item = businessInvoiceItemRepository.save(BillItem.builder()
                 .invoice(invoice)
                 .description("Test Item")
                 .quantity(BigDecimal.ONE)
@@ -165,7 +165,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("voidInvoice open succeeds")
         void voidInvoice_open_succeeds() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-008")
                 .status(InvoiceStatus.OPEN)
                 .subtotal(new BigDecimal("100"))
@@ -182,7 +182,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("voidInvoice paid invoice throws ResourceException")
         void voidInvoice_paidInvoice_throwsResourceException() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-009")
                 .status(InvoiceStatus.PAID)
                 .subtotal(new BigDecimal("100"))
@@ -204,7 +204,7 @@ class BusinessInvoiceServiceTest {
         @Test
         @DisplayName("getById returns invoice with items")
         void getById_returnsInvoiceWithItems() {
-            BusinessInvoice invoice = businessInvoiceRepository.save(BusinessInvoice.builder()
+            Bill invoice = businessInvoiceRepository.save(Bill.builder()
                 .invoiceNumber("BINV-010")
                 .status(InvoiceStatus.DRAFT)
                 .subtotal(new BigDecimal("100"))
@@ -213,7 +213,7 @@ class BusinessInvoiceServiceTest {
                 .customerId(1L)
                 .build());
 
-            businessInvoiceItemRepository.save(BusinessInvoiceItem.builder()
+            businessInvoiceItemRepository.save(BillItem.builder()
                 .invoice(invoice)
                 .description("Test Item")
                 .quantity(BigDecimal.ONE)
@@ -236,7 +236,7 @@ class BusinessInvoiceServiceTest {
         @DisplayName("list returns paged results")
         void list_returnsPagedResults() {
             for (int i = 0; i < 3; i++) {
-                businessInvoiceRepository.save(BusinessInvoice.builder()
+                businessInvoiceRepository.save(Bill.builder()
                     .invoiceNumber("BINV-LIST-" + i)
                     .status(InvoiceStatus.DRAFT)
                     .subtotal(BigDecimal.ZERO)

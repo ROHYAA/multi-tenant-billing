@@ -13,7 +13,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TenantSchemaInfoResponse {
+public class ShopSchemaInfoResponse {
 
     private String schemaName;
     private long userCount;

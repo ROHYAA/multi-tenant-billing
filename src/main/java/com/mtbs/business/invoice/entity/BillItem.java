@@ -18,7 +18,7 @@ import org.hibernate.annotations.SQLRestriction;
 import java.math.BigDecimal;
 
 /**
- * A single line item on a BusinessInvoice.
+ * A single line item on a Bill.
  *
  * SNAPSHOT DESIGN — prices and tax rates are copied from the product at the
  * moment the line item is created. They are NOT live-linked. If a product's
@@ -45,11 +45,11 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessInvoiceItem extends AuditableEntity {
+public class BillItem extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "invoice_id", nullable = false)
-    private BusinessInvoice invoice;
+    private Bill invoice;
 
     /**
      * Reference to the catalog product. Null for free-text line items.

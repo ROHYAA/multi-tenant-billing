@@ -5,7 +5,7 @@ import com.mtbs.business.report.dto.OutstandingReportResponse;
 import com.mtbs.business.report.dto.RevenueReportResponse;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.exception.ResourceException;
-import com.mtbs.business.report.service.BusinessReportService;
+import com.mtbs.business.report.service.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,9 +29,9 @@ import java.util.List;
 @PreAuthorize("hasAuthority('PERMISSION_BILLING_MANAGE')")
 @Tag(name = "Business Reports", description = "Revenue, outstanding, and monthly summary reports")
 @SecurityRequirement(name = "bearerAuth")
-public class BusinessReportController {
+public class ReportController {
 
-    private final BusinessReportService reportService;
+    private final ReportService reportService;
 
     // ── GET /api/reports/revenue ──────────────────────────────────────────────
 

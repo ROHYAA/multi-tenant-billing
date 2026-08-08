@@ -1,6 +1,6 @@
 package com.mtbs.business.payment.repository;
 
-import com.mtbs.business.payment.entity.BusinessPayment;
+import com.mtbs.business.payment.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,27 +11,27 @@ import java.time.Instant;
 import java.util.List;
 
 @Repository
-public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment, Long> {
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // ── Per-invoice queries ───────────────────────────────────────────────────
 
     /**
      * All payments for a specific invoice.
-     * Primary access pattern — used by BusinessPaymentController and
-     * BusinessPaymentService.listByInvoice().
+     * Primary access pattern — used by PaymentController and
+     * PaymentService.listByInvoice().
      */
-    List<BusinessPayment> findAllByInvoiceId(Long invoiceId);
+    List<Payment> findAllByInvoiceId(Long invoiceId);
 
     /**
      * Total amount collected for a specific invoice.
-     * Used by BusinessPaymentService to:
+     * Used by PaymentService to:
      *   1. Validate new payment doesn't exceed outstanding balance
      *   2. Check whether invoice is now fully paid
      * COALESCE handles the case where no payments exist yet (returns 0).
      */
     @Query("""
         SELECT COALESCE(SUM(p.amount), 0)
-        FROM BusinessPayment p
+        FROM Payment p
         WHERE p.invoiceId = :invoiceId
         """)
     BigDecimal sumAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
@@ -41,12 +41,12 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
     /**
      * Total revenue collected across all invoices within a date range.
      * Revenue is measured by paid_at (actual payment date), not createdAt.
-     * Used by BusinessReportService.getRevenueReport().
+     * Used by ReportService.getRevenueReport().
      * COALESCE returns 0 when no payments fall in the period.
      */
     @Query("""
         SELECT COALESCE(SUM(p.amount), 0)
-        FROM BusinessPayment p
+        FROM Payment p
         WHERE p.paidAt >= :from
           AND p.paidAt <= :to
         """)
@@ -58,7 +58,7 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
     /**
      * Revenue broken down by payment method within a date range.
      * Returns one row per method: [methodString, totalAmount].
-     * Used by BusinessReportService.getRevenueReport() for the method breakdown.
+     * Used by ReportService.getRevenueReport() for the method breakdown.
      *
      * Result rows are Object[] where:
      *   row[0] = String (PaymentMethod enum name, e.g. "UPI")
@@ -68,7 +68,7 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
      */
     @Query("""
         SELECT p.method, COALESCE(SUM(p.amount), 0)
-        FROM BusinessPayment p
+        FROM Payment p
         WHERE p.paidAt >= :from
           AND p.paidAt <= :to
         GROUP BY p.method
@@ -82,7 +82,7 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
      * All payments within a date range — ordered by paid_at descending.
      * Used internally when detailed payment list is needed for a period.
      */
-    List<BusinessPayment> findAllByPaidAtBetween(Instant from, Instant to);
+    List<Payment> findAllByPaidAtBetween(Instant from, Instant to);
 
     // ── Payment summary queries ────────────────────────────────────────────────
 
@@ -90,16 +90,16 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
      * All payments with a paidAt timestamp (successful payments).
      */
     @Query("""
-        SELECT p FROM BusinessPayment p
+        SELECT p FROM Payment p
         WHERE p.paidAt IS NOT NULL
         ORDER BY p.paidAt DESC
         """)
-    List<BusinessPayment> findAllSuccessful();
+    List<Payment> findAllSuccessful();
 
     /**
      * Total count of all payments.
      */
-    @Query("SELECT COUNT(p) FROM BusinessPayment p")
+    @Query("SELECT COUNT(p) FROM Payment p")
     long countAll();
 
     /**
@@ -107,7 +107,7 @@ public interface BusinessPaymentRepository extends JpaRepository<BusinessPayment
      */
     @Query("""
         SELECT COALESCE(SUM(p.amount), 0)
-        FROM BusinessPayment p
+        FROM Payment p
         WHERE p.paidAt IS NOT NULL
         """)
     BigDecimal sumAllSuccessful();

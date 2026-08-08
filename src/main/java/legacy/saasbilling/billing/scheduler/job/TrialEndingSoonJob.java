@@ -3,14 +3,14 @@ package legacy.saasbilling.billing.scheduler.job;
 import legacy.saasbilling.billing.dto.InvoiceResponse;
 import legacy.saasbilling.tenant.entity.Plan;
 import legacy.saasbilling.billing.entity.Subscription;
-import com.mtbs.tenant.entity.Tenant;
+import com.mtbs.tenant.entity.Shop;
 import legacy.saasbilling.shared.enums.SubscriptionStatus;
 import com.mtbs.shared.enums.notification.NotificationEvent;
 import com.mtbs.shared.event.bill.BillEvent;
 import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.multitenancy.TenantContext;
 import legacy.saasbilling.tenant.repository.PlanRepository;
-import com.mtbs.tenant.service.TenantService;
+import com.mtbs.tenant.service.ShopService;
 import legacy.saasbilling.billing.service.SubscriptionService;
 import legacy.saasbilling.billing.service.InvoiceService;
 import legacy.saasbilling.billing.service.PaymentService;
@@ -46,7 +46,7 @@ public class TrialEndingSoonJob implements Job {
 
     private static final int DAYS_BEFORE_EXPIRY = 3;
 
-    private final TenantService tenantService;
+    private final ShopService tenantService;
     private final SubscriptionService subscriptionService;
     private final PlanRepository planRepository;
     private final OutboxEventPublisher outboxEventPublisher;
@@ -57,14 +57,14 @@ public class TrialEndingSoonJob implements Job {
     public void execute(JobExecutionContext context) {
         log.info("TrialEndingSoonJob started at {}", Instant.now());
 
-        List<Tenant> activeTenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
+        List<Shop> activeTenants = tenantService.getTenantsByStatusList(Status.ACTIVE);
         Instant now = Instant.now();
         Instant windowEnd = now.plus(DAYS_BEFORE_EXPIRY, ChronoUnit.DAYS);
 
         int notified = 0;
         AtomicInteger invoicesGenerated = new AtomicInteger();
 
-        for (Tenant tenant : activeTenants) {
+        for (Shop tenant : activeTenants) {
             try {
                 TenantContext.setTenantId(tenant.getId());
                 TenantContext.setCurrentSchema(tenant.getSchemaName());
@@ -107,7 +107,7 @@ public class TrialEndingSoonJob implements Job {
                 && !trialEnd.isAfter(windowEnd);
     }
 
-    private void fireNotification(Tenant tenant, Subscription sub, long daysLeft) {
+    private void fireNotification(Shop tenant, Subscription sub, long daysLeft) {
         try {
             String planDisplayName = planRepository.findById(sub.getPlanId())
                     .map(Plan::getDisplayName)
@@ -132,7 +132,7 @@ public class TrialEndingSoonJob implements Job {
         }
     }
 
-    private void generateInvoiceAndPaymentLink(Tenant tenant, Subscription sub) {
+    private void generateInvoiceAndPaymentLink(Shop tenant, Subscription sub) {
         try {
             Instant periodStart = sub.getCurrentPeriodStart() != null 
                     ? sub.getCurrentPeriodStart() 
