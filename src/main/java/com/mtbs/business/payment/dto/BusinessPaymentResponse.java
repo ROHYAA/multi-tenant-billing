@@ -1,7 +1,7 @@
 package com.mtbs.business.payment.dto;
  
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.mtbs.shared.enums.billing.PaymentMethod;
+import com.mtbs.shared.enums.bill.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

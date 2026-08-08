@@ -6,8 +6,6 @@ import com.mtbs.business.customer.dto.UpdateCustomerRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.business.customer.service.CustomerService;
 import com.mtbs.shared.dto.common.PageResponse;
-import com.mtbs.shared.annotation.TrackUsage;
-import com.mtbs.shared.enums.billing.UsageMetric;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -42,11 +40,10 @@ public class CustomerController {
     // ── POST /api/customers ───────────────────────────────────────────────────
 
     @PostMapping
-    @TrackUsage(metric = UsageMetric.API_CALLS)
     @PreAuthorize("hasAuthority('PERMISSION_CUSTOMER_MANAGE')")
     @Operation(
         summary = "Create a customer",
-        description = "Creates a new customer and syncs them to Razorpay (best-effort). " +
+        description = "Creates a new customer. " +
                       "Email must be unique within the tenant. GSTIN is optional and validated " +
                       "as a 15-character alphanumeric string when provided. " +
                       "Requires CUSTOMER_MANAGE permission."

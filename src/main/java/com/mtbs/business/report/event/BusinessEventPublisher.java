@@ -1,6 +1,6 @@
 package com.mtbs.business.report.event;
 
-import com.mtbs.shared.event.billing.BillingEvent;
+import com.mtbs.shared.event.bill.BillEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * Publishes business billing events (customer invoices and payments).
  *
  * Used by: BusinessInvoiceService, BusinessPaymentService
- * Listener: NotificationService.handleBillingEvent(BillingEvent)
+ * Listener: NotificationService.handleBillingEvent(BillEvent)
  *
  * Events routed through this publisher:
  *   BUSINESS_INVOICE_SENT, BUSINESS_PAYMENT_RECORDED
@@ -22,7 +22,7 @@ public class BusinessEventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    public void publish(BillingEvent event) {
+    public void publish(BillEvent event) {
         try {
             eventPublisher.publishEvent(event);
             log.debug("Business event published: {}", event.getEventType());

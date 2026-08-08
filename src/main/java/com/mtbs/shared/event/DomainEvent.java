@@ -5,8 +5,8 @@ import java.time.Instant;
 /**
  * Marker interface for all domain events in the system.
  *
- * All Spring application events (BillingEvent, AuthNotificationEvent,
- * BusinessEvent) should implement this interface so:
+ * All Spring application events (BillEvent, AuthNotificationEvent)
+ * should implement this interface so:
  *   1. Event listeners can type-check with a single base type
  *   2. The future OutboxEventPublisher can serialize any event uniformly
  *   3. Logging/tracing infrastructure can log event metadata without
@@ -17,10 +17,7 @@ import java.time.Instant;
  *   - getOccurredAt() — UTC timestamp when the event was created
  *   - getEventType() — discriminator string for serialization and routing
  *
- * EXISTING EVENTS that should implement this:
- *   BillingEvent, AuthNotificationEvent — add {@code implements DomainEvent}
- *   to both classes. The default methods provide backward-compatible defaults
- *   so no existing code breaks.
+
  */
 public interface DomainEvent {
 

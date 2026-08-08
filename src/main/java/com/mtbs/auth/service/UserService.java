@@ -4,14 +4,13 @@ import com.mtbs.auth.dto.user.*;
 import com.mtbs.auth.entity.User;
 import com.mtbs.auth.mapper.UserMapper;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.service.PlanLimitService;
 import com.mtbs.tenant.service.TenantService;
 import com.mtbs.shared.util.SecurityUtils;
 import com.mtbs.auth.repository.UserRepository;
@@ -43,7 +42,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final TenantService tenantService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final PlanLimitService planLimitService;
     private final UserMapper userMapper;
     private final PermissionCacheService permissionCacheService;
 
@@ -62,7 +60,6 @@ public class UserService {
     @CacheEvict(value = "dashboard", allEntries = true)
     public UserResponse createUser(CreateUserRequest request) {
         log.info("Delegating user creation: {}", request.getEmail());
-        planLimitService.enforceUserLimit();
         User user = userScopedService.saveNewUser(request, passwordEncoder);
 
         outboxEventPublisher.save(AuditLogEvent.builder()

@@ -14,7 +14,6 @@ public interface CustomerMapper {
     @Mapping(target = "phone", source = "phone")
     @Mapping(target = "address", source = "address")
     @Mapping(target = "gstin", source = "gstin")
-    @Mapping(target = "razorpayCustomerId", source = "razorpayCustomerId")
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "updatedAt", source = "updatedAt")
     CustomerResponse toResponse(Customer entity);

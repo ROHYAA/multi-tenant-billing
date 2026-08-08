@@ -13,14 +13,13 @@ import com.mtbs.business.invoice.mapper.BusinessInvoiceMapper;
 import com.mtbs.business.invoice.mapper.BusinessInvoiceItemMapper;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.product.entity.Product;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.shared.event.billing.BillingEvent;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.bill.BillEvent;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.business.invoice.repository.BusinessInvoiceItemRepository;
 import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.billing.gateway.PaymentGatewayPort;
 import com.mtbs.tenant.service.TenantService;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -85,7 +84,6 @@ public class BusinessInvoiceService {
     private final BusinessInvoiceItemMapper itemMapper;
 
     private final BusinessInvoicePdfService pdfService;
-    private final PaymentGatewayPort paymentGateway;
 
     // ── Create ────────────────────────────────────────────────────────────────
 
@@ -462,7 +460,7 @@ public class BusinessInvoiceService {
         try {
             java.util.Map<String, Object> extra = new java.util.HashMap<>();
 
-            // invoiceTotal has no direct field on BillingEvent — must go in extra
+            // invoiceTotal has no direct field on BillEvent — must go in extra
             extra.put("invoiceTotal", invoice.getTotalAmount().toPlainString());
 
             // dueDate formatted for the template
@@ -472,11 +470,6 @@ public class BusinessInvoiceService {
                         .format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")));
             }
 
-            // paymentLinkUrl — only if a Razorpay link was generated
-            if (invoice.getRazorpayPaymentLinkId() != null) {
-                extra.put("paymentLinkUrl", invoice.getRazorpayPaymentLinkId());
-            }
-
             // PDF bytes — encode to Base64 for serialization
             String pdfBase64 = null;
             if (pdfBytes != null && pdfBytes.length > 0) {
@@ -484,7 +477,7 @@ public class BusinessInvoiceService {
                 extra.put("pdfAttachment", pdfBase64);
             }
 
-            outboxEventPublisher.save(BillingEvent.builder()
+            outboxEventPublisher.save(BillEvent.builder()
                     .eventType(NotificationEvent.BUSINESS_INVOICE_SENT)
                     .tenantId(SecurityUtils.getCurrentTenantId())
                     .tenantName(tenantName)
@@ -538,56 +531,5 @@ public class BusinessInvoiceService {
         // Validate invoice exists before handing off to PDF service
         findOrThrow(invoiceId);
         return pdfService.generatePdf(invoiceId);
-    }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADD: createPaymentLink() — replaces the stub in BusinessInvoiceController
-// ─────────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Creates a Razorpay Payment Link for an OPEN invoice and stores the link ID.
-     * Idempotent: if a link already exists (razorpayPaymentLinkId is set), returns
-     * the existing ID without creating a new one.
-     *
-     * Called by POST /api/business-invoices/{id}/payment-link.
-     */
-    @Transactional
-    public String createPaymentLink(Long invoiceId) {
-        BusinessInvoice invoice = findOrThrow(invoiceId);
-
-        if (invoice.getStatus() != InvoiceStatus.OPEN) {
-            throw ResourceException.invalid(
-                    "Payment links can only be created for OPEN invoices. " +
-                            "Current status: " + invoice.getStatus());
-        }
-
-        // Idempotent — return existing link if already created
-        if (invoice.getRazorpayPaymentLinkId() != null) {
-            log.info("Returning existing payment link for invoiceId={}", invoiceId);
-            return invoice.getRazorpayPaymentLinkId();
-        }
-
-        Customer customer = customerService.getEntityById(invoice.getCustomerId());
-
-        // Convert totalAmount to paise (Razorpay requires smallest currency unit)
-        long amountPaise = invoice.getTotalAmount()
-                .multiply(java.math.BigDecimal.valueOf(100))
-                .longValue();
-
-        String paymentLinkId = paymentGateway.createPaymentLink(
-                amountPaise,
-                invoice.getCurrency(),
-                "Invoice " + invoice.getInvoiceNumber(),
-                customer.getEmail(),
-                customer.getName(),
-                customer.getPhone(),
-                invoice.getInvoiceNumber()   // receipt = invoice number as idempotency key
-        );
-
-        invoice.setRazorpayPaymentLinkId(paymentLinkId);
-        invoiceRepository.save(invoice);
-
-        log.info("Payment link created — invoiceId={}, linkId={}", invoiceId, paymentLinkId);
-        return paymentLinkId;
     }
 }

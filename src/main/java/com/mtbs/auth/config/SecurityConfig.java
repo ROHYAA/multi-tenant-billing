@@ -55,12 +55,7 @@ public class SecurityConfig {
                 "/api/" + apiVersion + "/admin/auth/refresh",
 
                 // Platform public endpoints
-                "/api/" + apiVersion + "/plans",
-                "/api/" + apiVersion + "/plans/{id}",
                 "/api/" + apiVersion + "/health",
-
-                // Payment webhooks — authenticated via Razorpay signature, not JWT
-                "/api/" + apiVersion + "/webhooks/**",
 
                 // API docs
                 "/swagger-ui/**",

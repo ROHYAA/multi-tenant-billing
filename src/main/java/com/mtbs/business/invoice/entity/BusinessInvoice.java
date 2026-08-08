@@ -1,7 +1,7 @@
 package com.mtbs.business.invoice.entity;
 
 import com.mtbs.shared.entity.AuditableEntity;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

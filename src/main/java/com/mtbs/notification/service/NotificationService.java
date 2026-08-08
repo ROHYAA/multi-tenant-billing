@@ -7,7 +7,7 @@ import com.mtbs.notification.domain.NotificationChannel;
 import com.mtbs.notification.domain.NotificationPriority;
 import com.mtbs.notification.domain.NotificationRequest;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
-import com.mtbs.shared.event.billing.BillingEvent;
+import com.mtbs.shared.event.bill.BillEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +34,7 @@ public class NotificationService {
             DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a z")
                     .withZone(ZoneId.of("UTC"));
 
-    public void handleBillingEvent(BillingEvent event) {
+    public void handleBillingEvent(BillEvent event) {
         log.info("Processing billing notification: type={}, tenant={}", event.getEventType(), event.getTenantId());
         try {
             EmailTemplateConfig.TemplateDefinition def = templateConfig.getTemplate(event.getEventType());
@@ -92,7 +92,7 @@ public class NotificationService {
         }
     }
 
-    private Map<String, Object> buildBillingVariables(BillingEvent event) {
+    private Map<String, Object> buildBillingVariables(BillEvent event) {
         Map<String, Object> variables = new HashMap<>();
 
         variables.put("frontendUrl", frontendUrl);
@@ -159,7 +159,7 @@ public class NotificationService {
         return variables;
     }
 
-    private byte[] extractPdfBytes(BillingEvent event) {
+    private byte[] extractPdfBytes(BillEvent event) {
         try {
             if (event.getPdfAttachmentBase64() != null && !event.getPdfAttachmentBase64().isEmpty()) {
                 return java.util.Base64.getDecoder().decode(event.getPdfAttachmentBase64());
@@ -194,7 +194,7 @@ public class NotificationService {
         return DATE_FORMATTER.format(instant);
     }
 
-    private String resolveSubject(String subjectTemplate, BillingEvent event) {
+    private String resolveSubject(String subjectTemplate, BillEvent event) {
         String invoiceNumber = event.getExtra() != null && event.getExtra().get("invoiceNumber") != null
                 ? String.valueOf(event.getExtra().get("invoiceNumber"))
                 : (event.getInvoiceNumber() != null ? event.getInvoiceNumber() : "");

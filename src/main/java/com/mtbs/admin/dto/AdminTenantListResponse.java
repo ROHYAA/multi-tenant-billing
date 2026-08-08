@@ -21,9 +21,6 @@ public class AdminTenantListResponse {
     private Long id;
     private String name;
     private String schemaName;
-    private Long planId;
-    private String planCode;
-    private String planName;
     private Status status;
     private long userCount;
     private Instant createdAt;

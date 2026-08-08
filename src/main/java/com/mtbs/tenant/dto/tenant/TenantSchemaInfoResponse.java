@@ -19,5 +19,4 @@ public class TenantSchemaInfoResponse {
     private long userCount;
     private long roleCount;
     private Instant createdAt;
-    private long subscriptionCount;
 }

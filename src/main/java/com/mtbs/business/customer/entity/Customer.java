@@ -19,9 +19,6 @@ import org.hibernate.annotations.SQLRestriction;
  *
  * Lives in the tenant schema — each tenant has its own isolated customer table.
  *
- * razorpayCustomerId is created via PaymentGatewayPort.createCustomer() during
- * customer creation and stored here for future payment link generation.
- *
  * gstin (GST Identification Number) is optional but required for GST-compliant
  * B2B invoices in India.
  */
@@ -55,12 +52,4 @@ public class Customer extends AuditableEntity {
      */
     @Column(name = "gstin", length = 20)
     private String gstin;
-
-    /**
-     * Razorpay customer ID (cust_XXXX).
-     * Created via PaymentGatewayPort.createCustomer() during customer creation.
-     * Null until the customer has been synced to Razorpay.
-     */
-    @Column(name = "razorpay_customer_id", length = 100)
-    private String razorpayCustomerId;
 }

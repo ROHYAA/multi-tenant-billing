@@ -2,7 +2,7 @@ package com.mtbs.notification.listener;
 
 import com.mtbs.notification.service.NotificationService;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
-import com.mtbs.shared.event.billing.BillingEvent;
+import com.mtbs.shared.event.bill.BillEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -16,7 +16,7 @@ public class NotificationEventListener {
     private final NotificationService notificationService;
 
     @EventListener
-    public void handleBillingEvent(BillingEvent event) {
+    public void handleBillingEvent(BillEvent event) {
         log.info("Handling billing notification: type={}, tenant={}", event.getEventType(), event.getTenantId());
         notificationService.handleBillingEvent(event);
     }

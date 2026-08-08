@@ -56,9 +56,6 @@ public class AuthService {
             throw TenantException.suspended(tenant.getId());
         }
 
-        // PENDING_ONBOARDING tenants are allowed — they log back in to resume the wizard.
-        // The JWT is valid; frontend checks GET /api/onboarding/status and redirects.
-
         // Step 3: Resolve schemaName (Redis → DB)
         String schemaName = schemaCacheService.resolveSchemaName(tenantId);
 

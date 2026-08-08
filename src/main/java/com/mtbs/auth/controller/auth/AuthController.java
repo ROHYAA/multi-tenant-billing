@@ -48,21 +48,21 @@ public class AuthController {
 
     @PostMapping("/signup")
     @Operation(
-            summary = "Create account — Phase 0 of onboarding",
-            description = "Creates a tenant account, provisions the PostgreSQL schema, creates the " +
+            summary = "Create a shop account",
+            description = "Creates a tenant (shop) account, provisions the PostgreSQL schema, creates the " +
                     "ROLE_OWNER user, and returns user/tenant info. Tokens are set via HttpOnly, Secure, SameSite=Lax cookies. " +
-                    "Tenant status is PENDING_ONBOARDING. Frontend must redirect to /onboarding after this call."
+                    "The shop is ACTIVE immediately — no onboarding wizard."
     )
     public ResponseEntity<ApiResponse<AuthResponse>> signup(
             @Valid @RequestBody SignupRequest request,
             HttpServletResponse response) {
 
         AuthResponse result = signupService.signup(request, response);
-        
+
         // Note: SignupService will have already set the HttpOnly cookies if tokens were generated.
         // Controller just needs to return the response without tokens.
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(result, "Account created. Please complete onboarding."));
+                .body(ApiResponse.success(result, "Account created successfully."));
     }
 
     // ── POST /api/auth/tenants ─────────────────────────────────────────────────

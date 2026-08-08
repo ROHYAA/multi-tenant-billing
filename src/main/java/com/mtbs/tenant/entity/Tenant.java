@@ -24,10 +24,6 @@ public class Tenant extends AuditableEntity {
     @Column(name = "schema_name", nullable = false, unique = true)
     private String schemaName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id")
-    private Plan plan;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -38,9 +34,5 @@ public class Tenant extends AuditableEntity {
 
     @Column(name = "slug", length = 63, unique = true)
     private String slug;
-
-    @Column(name = "onboarding_step", nullable = false)
-    @Builder.Default
-    private Integer onboardingStep = 0;
 
 }

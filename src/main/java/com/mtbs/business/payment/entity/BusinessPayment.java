@@ -1,7 +1,7 @@
 package com.mtbs.business.payment.entity;
 
 import com.mtbs.shared.entity.AuditableEntity;
-import com.mtbs.shared.enums.billing.PaymentMethod;
+import com.mtbs.shared.enums.bill.PaymentMethod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

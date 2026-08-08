@@ -2,7 +2,7 @@ package com.mtbs.business.payment.dto;
  
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
-import com.mtbs.shared.enums.billing.PaymentMethod;
+import com.mtbs.shared.enums.bill.PaymentMethod;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

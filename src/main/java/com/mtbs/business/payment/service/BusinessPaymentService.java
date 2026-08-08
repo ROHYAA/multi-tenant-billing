@@ -8,13 +8,12 @@ import com.mtbs.business.invoice.entity.BusinessInvoice;
 import com.mtbs.business.payment.entity.BusinessPayment;
 import com.mtbs.business.payment.mapper.BusinessPaymentMapper;
 import com.mtbs.business.customer.entity.Customer;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.shared.event.billing.BillingEvent;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.bill.BillEvent;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.business.payment.repository.BusinessPaymentRepository;
-import com.mtbs.billing.gateway.PaymentGatewayPort;
 import com.mtbs.tenant.service.TenantService;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +33,6 @@ import java.util.stream.Collectors;
  *   only when sum(payments) >= invoice.totalAmount. This handles scenarios
  *   like a customer paying 50% upfront and 50% on delivery.
  *
- * Payment link:
- *   Razorpay Payment Links are created on demand. The link is stored on the
- *   invoice and returned to the tenant to share with the customer.
- *   Note: PaymentGatewayPort does not currently expose createPaymentLink() —
- *   this is added to the interface as part of Phase 4. The method stub is
- *   wired here so the service compiles — the implementation adds the real call.
  */
 @Service
 @RequiredArgsConstructor
@@ -51,7 +44,6 @@ public class BusinessPaymentService {
     private final CustomerService customerService;
     private final TenantService tenantService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final PaymentGatewayPort paymentGateway;
     private final BusinessPaymentMapper paymentMapper;
 
     // ── Record payment ────────────────────────────────────────────────────────
@@ -162,7 +154,7 @@ public class BusinessPaymentService {
             extra.put("paidAt",            payment.getPaidAt().toString());
             extra.put("outstandingAmount", outstanding.toPlainString());
 
-            outboxEventPublisher.save(BillingEvent.builder()
+            outboxEventPublisher.save(BillEvent.builder()
                     .eventType(NotificationEvent.BUSINESS_PAYMENT_RECORDED)
                     .tenantId(tenantId)
                     .tenantName(tenantName)

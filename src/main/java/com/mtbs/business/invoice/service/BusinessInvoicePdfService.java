@@ -1,15 +1,12 @@
 package com.mtbs.business.invoice.service;
 
 import com.itextpdf.kernel.colors.Color;
-import com.mtbs.billing.entity.Subscription;
-import com.mtbs.billing.service.SubscriptionService;
 import com.mtbs.business.customer.service.CustomerService;
 import com.mtbs.business.invoice.entity.BusinessInvoice;
 import com.mtbs.business.invoice.entity.BusinessInvoiceItem;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.invoice.repository.BusinessInvoiceItemRepository;
 import com.mtbs.business.invoice.repository.BusinessInvoiceRepository;
-import com.mtbs.billing.service.UsageService;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
@@ -25,12 +22,9 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import com.mtbs.shared.enums.billing.SubscriptionStatus;
 import com.mtbs.shared.exception.ResourceException;
-import com.mtbs.shared.multitenancy.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +34,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -58,8 +51,6 @@ public class BusinessInvoicePdfService {
     private final BusinessInvoiceRepository invoiceRepository;
     private final BusinessInvoiceItemRepository itemRepository;
     private final CustomerService customerService;
-    private final SubscriptionService subscriptionService;
-    private final UsageService usageService;
 
     @Transactional(readOnly = true)
     public byte[] generatePdf(Long invoiceId) {
@@ -80,41 +71,7 @@ public class BusinessInvoicePdfService {
             throw ResourceException.invalid("PDF generation failed: " + e.getMessage());
         }
 
-        recordStorageUsageAsync(pdf.length);
-
         return pdf;
-    }
-
-    @Async
-    public void recordStorageUsageAsync(long fileSizeBytes) {
-        try {
-            Long tenantId = TenantContext.getTenantId();
-            if (tenantId == null) {
-                log.warn("No tenant context — skipping storage recording for business invoice");
-                return;
-            }
-
-            Optional<Subscription> subOpt = subscriptionService.findFirstSubscriptionByStatuses(
-                    List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING));
-
-            if (subOpt.isEmpty()) {
-                log.warn("No active subscription for tenantId={} — skipping storage recording", tenantId);
-                return;
-            }
-
-            Subscription subscription = subOpt.get();
-
-            usageService.recordStorageUsage(
-                    tenantId,
-                    subscription.getId(),
-                    fileSizeBytes,
-                    subscription.getCurrentPeriodStart(),
-                    subscription.getCurrentPeriodEnd()
-            );
-            log.debug("Storage usage recorded for business invoice, tenantId={}, bytes={}", tenantId, fileSizeBytes);
-        } catch (Exception e) {
-            log.error("Failed to record storage usage for business invoice: {}", e.getMessage(), e);
-        }
     }
 
     private byte[] buildPdf(BusinessInvoice invoice,

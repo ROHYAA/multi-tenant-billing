@@ -2,7 +2,6 @@ package com.mtbs.admin.controller;
 
 import com.mtbs.admin.dto.AdminTenantDetailResponse;
 import com.mtbs.admin.dto.AdminTenantListResponse;
-import com.mtbs.admin.dto.ChangeTenantPlanRequest;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
@@ -46,19 +45,15 @@ public class AdminTenantController {
     @Operation(
             summary = "List all tenants",
             description = "Returns a paginated list of all tenants. " +
-                    "Optionally filter by status (ACTIVE, SUSPENDED, PENDING_ONBOARDING, etc.) " +
-                    "and/or plan ID."
+                    "Optionally filter by status (ACTIVE, SUSPENDED, etc.)."
     )
     public ResponseEntity<ApiResponse<PageResponse<AdminTenantListResponse>>> getAllTenants(
             @Parameter(description = "Filter by tenant status")
             @RequestParam(required = false) Status status,
 
-            @Parameter(description = "Filter by plan ID")
-            @RequestParam(required = false) Long planId,
-
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        Page<AdminTenantListResponse> response = adminTenantService.getAllTenants(status, planId, pageable);
+        Page<AdminTenantListResponse> response = adminTenantService.getAllTenants(status, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(response), "Tenants fetched successfully"));
     }
 
@@ -91,22 +86,6 @@ public class AdminTenantController {
 
         TenantResponse response = adminTenantService.changeTenantStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant status updated successfully"));
-    }
-
-    // ── PUT /api/admin/tenants/{id}/plan ──────────────────────────────────────
-
-    @PutMapping("/{id}/plan")
-    @Operation(
-            summary = "Change tenant plan",
-            description = "Overrides a tenant's plan directly from the admin panel. " +
-                    "This does not create a subscription — use this for manual plan overrides only."
-    )
-    public ResponseEntity<ApiResponse<TenantResponse>> changeTenantPlan(
-            @PathVariable Long id,
-            @Valid @RequestBody ChangeTenantPlanRequest request) {
-
-        TenantResponse response = adminTenantService.changeTenantPlan(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Tenant plan updated successfully"));
     }
 
     // ── GET /api/admin/tenants/{id}/users ─────────────────────────────────────

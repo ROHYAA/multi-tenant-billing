@@ -32,13 +32,4 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     boolean existsBySlug(String slug);
 
     Optional<Tenant> findBySlug(String slug);
-
-    @Query("SELECT t FROM Tenant t WHERE t.plan.id = :planId AND t.deleted = false")
-    List<Tenant> findByPlanIdAndDeletedFalse(@Param("planId") Long planId);
-
-    @Query("SELECT t FROM Tenant t WHERE t.plan.code = :code AND t.deleted = false")
-    List<Tenant> findByPlanCodeAndDeletedFalse(@Param("code") String code);
-
-    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.plan WHERE t.id = :id")
-    Optional<Tenant> findByIdWithPlan(@Param("id") Long id);
 }

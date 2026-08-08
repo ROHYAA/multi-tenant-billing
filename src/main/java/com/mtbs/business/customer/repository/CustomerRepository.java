@@ -19,8 +19,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByEmail(String email);
 
-    Optional<Customer> findByRazorpayCustomerId(String razorpayCustomerId);
-
     /**
      * Paginated search — called only when search term is non-blank.
      * CAST(:search AS string) is NOT used — the parameter is always a non-null
@@ -54,7 +52,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
         SELECT COUNT(i) > 0
         FROM BusinessInvoice i
         WHERE i.customerId = :customerId
-          AND i.status <> com.mtbs.shared.enums.billing.InvoiceStatus.VOID
+          AND i.status <> com.mtbs.shared.enums.bill.InvoiceStatus.VOID
         """)
     boolean hasActiveInvoices(@Param("customerId") Long customerId);
 }

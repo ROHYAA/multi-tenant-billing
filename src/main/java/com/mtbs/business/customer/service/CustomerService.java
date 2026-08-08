@@ -7,7 +7,6 @@ import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.customer.mapper.CustomerMapper;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.business.customer.repository.CustomerRepository;
-import com.mtbs.billing.gateway.PaymentGatewayPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,12 +20,6 @@ import org.springframework.util.StringUtils;
  *
  * TenantContext is already set by JwtAuthenticationFilter for every
  * authenticated request. No manual context wiring needed here.
- *
- * Razorpay customer sync:
- *   On create: if email/phone/name is present, we create the customer in Razorpay
- *   and store the ID. This ID is used later to generate Razorpay payment links.
- *   If Razorpay creation fails, we log and continue — the customer is still
- *   created locally. Razorpay sync is best-effort, not blocking.
  */
 @Service
 @RequiredArgsConstructor
@@ -34,7 +27,6 @@ import org.springframework.util.StringUtils;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
-    private final PaymentGatewayPort paymentGateway;
     private final CustomerMapper customerMapper;
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -57,12 +49,8 @@ public class CustomerService {
                 .gstin(request.getGstin())
                 .build();
 
-        // Sync to Razorpay — best-effort, never blocks local creation
-        String razorpayCustomerId = syncToRazorpay(customer);
-        customer.setRazorpayCustomerId(razorpayCustomerId);
-
         Customer saved = customerRepository.save(customer);
-        log.info("Customer created — id={}, razorpayId={}", saved.getId(), saved.getRazorpayCustomerId());
+        log.info("Customer created — id={}", saved.getId());
         return customerMapper.toResponse(saved);
     }
 
@@ -140,28 +128,6 @@ public class CustomerService {
     private Customer findOrThrow(Long id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> ResourceException.notFound("Customer", id));
-    }
-
-    /**
-     * Creates the customer in Razorpay and returns the customer ID.
-     * Returns null silently if creation fails — Razorpay sync is non-blocking.
-     */
-    private String syncToRazorpay(Customer customer) {
-        // Only sync if we have at least a name (Razorpay minimum requirement)
-        if (!StringUtils.hasText(customer.getName())) {
-            return null;
-        }
-        try {
-            String id = paymentGateway.createCustomer(
-                    customer.getEmail() != null ? customer.getEmail() : "",
-                    customer.getName(),
-                    customer.getPhone() != null ? customer.getPhone() : "");
-            log.debug("Razorpay customer created — id={}", id);
-            return id;
-        } catch (Exception e) {
-            log.warn("Razorpay customer sync failed (non-blocking): {}", e.getMessage());
-            return null;
-        }
     }
 
 }

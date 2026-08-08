@@ -4,11 +4,9 @@ import com.mtbs.auth.dto.user.ChangeUserRoleRequest;
 import com.mtbs.auth.dto.user.CreateUserRequest;
 import com.mtbs.auth.dto.user.UpdateOwnProfileRequest;
 import com.mtbs.auth.dto.user.UpdateUserRequest;
-import com.mtbs.shared.annotation.FeatureGate;
 import com.mtbs.auth.entity.Role;
 import com.mtbs.auth.entity.User;
 import com.mtbs.shared.enums.auth.Status;
-import com.mtbs.shared.enums.billing.UsageMetric;
 import com.mtbs.shared.exception.AuthException;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.auth.repository.RoleRepository;
@@ -34,7 +32,6 @@ public class UserScopedService {
     private final RoleRepository roleRepository;
 
     @Transactional
-    @FeatureGate(metric = UsageMetric.ACTIVE_USERS)
     public User saveNewUser(CreateUserRequest request, PasswordEncoder encoder) {
         log.info("Saving new user: {}", request.getEmail());
 

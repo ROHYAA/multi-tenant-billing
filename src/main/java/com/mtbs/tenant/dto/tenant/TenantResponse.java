@@ -21,9 +21,6 @@ public class TenantResponse {
     private Long id;
     private String name;
     private String schemaName;
-    private Long planId;
-    private String planCode;
-    private String planName;
     private Status status;
     private Instant createdAt;
 }

@@ -5,10 +5,8 @@ import com.mtbs.business.invoice.dto.BusinessInvoiceResponse;
 import com.mtbs.business.invoice.dto.CreateBusinessInvoiceRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.business.invoice.service.BusinessInvoiceService;
-import com.mtbs.shared.annotation.TrackUsage;
-import com.mtbs.shared.enums.billing.UsageMetric;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,7 +43,6 @@ public class BusinessInvoiceController {
     // ── POST /api/business-invoices ───────────────────────────────────────────
 
     @PostMapping
-    @TrackUsage(metric = UsageMetric.API_CALLS)
     @Operation(
         summary = "Create an invoice",
         description = "Creates a DRAFT invoice for a customer with one or more line items. " +
@@ -205,22 +202,5 @@ public class BusinessInvoiceController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH,
                         String.valueOf(pdf.length))
                 .body(pdf);
-    }
-
-    // ── POST /api/business-invoices/{id}/payment-link ─────────────────────────
-
-    @PostMapping("/{id}/payment-link")
-    @Operation(
-            summary = "Generate Razorpay payment link",
-            description = "Creates a Razorpay Payment Link for the invoice. " +
-                    "The link is a hosted Razorpay checkout page the customer can pay on. " +
-                    "Idempotent — returns the existing link ID if one was already created. " +
-                    "Invoice must be in OPEN status. " +
-                    "Requires BILLING_MANAGE permission."
-    )
-    public ResponseEntity<ApiResponse<String>> createPaymentLink(@PathVariable Long id) {
-        String paymentLinkId = invoiceService.createPaymentLink(id);
-        return ResponseEntity.ok(ApiResponse.success(paymentLinkId,
-                "Payment link created successfully"));
     }
 }

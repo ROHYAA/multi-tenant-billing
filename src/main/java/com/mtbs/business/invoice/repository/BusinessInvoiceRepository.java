@@ -1,7 +1,7 @@
 package com.mtbs.business.invoice.repository;
 
 import com.mtbs.business.invoice.entity.BusinessInvoice;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -59,7 +59,7 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      */
     @Query("""
         SELECT i FROM BusinessInvoice i
-        WHERE i.status = com.mtbs.shared.enums.billing.InvoiceStatus.OPEN
+        WHERE i.status = com.mtbs.shared.enums.bill.InvoiceStatus.OPEN
         ORDER BY i.dueDate ASC NULLS LAST
         """)
     List<BusinessInvoice> findAllOpen();
@@ -70,7 +70,7 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      */
     @Query("""
         SELECT i FROM BusinessInvoice i
-        WHERE i.status   = com.mtbs.shared.enums.billing.InvoiceStatus.OPEN
+        WHERE i.status   = com.mtbs.shared.enums.bill.InvoiceStatus.OPEN
           AND i.dueDate IS NOT NULL
           AND i.dueDate  < :now
         """)
@@ -126,7 +126,7 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      */
     @Query("""
         SELECT i FROM BusinessInvoice i
-        WHERE i.status     = com.mtbs.shared.enums.billing.InvoiceStatus.PAID
+        WHERE i.status     = com.mtbs.shared.enums.bill.InvoiceStatus.PAID
           AND i.paidAt    >= :from
           AND i.paidAt    <= :to
         ORDER BY i.paidAt DESC
@@ -141,7 +141,7 @@ public interface BusinessInvoiceRepository extends JpaRepository<BusinessInvoice
      */
     @Query("""
         SELECT i FROM BusinessInvoice i
-        WHERE i.status = com.mtbs.shared.enums.billing.InvoiceStatus.PAID
+        WHERE i.status = com.mtbs.shared.enums.bill.InvoiceStatus.PAID
         ORDER BY i.paidAt DESC
         """)
     List<BusinessInvoice> findAllPaid();

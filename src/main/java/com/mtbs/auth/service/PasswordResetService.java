@@ -3,7 +3,7 @@ package com.mtbs.auth.service;
 import com.mtbs.auth.entity.User;
 import com.mtbs.tenant.entity.Tenant;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;

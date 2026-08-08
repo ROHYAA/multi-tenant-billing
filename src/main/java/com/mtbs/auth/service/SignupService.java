@@ -4,22 +4,18 @@ import com.mtbs.auth.dto.auth.AuthResponse;
 import com.mtbs.auth.dto.auth.SignupRequest;
 import com.mtbs.auth.dto.auth.TokenPair;
 import com.mtbs.shared.util.CookieUtils;
-import com.mtbs.tenant.entity.TenantOnboarding;
 import com.mtbs.tenant.entity.Tenant;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.tenant.enums.KycStatus;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
 import com.mtbs.shared.enums.audit.AuditEntityType;
 import com.mtbs.shared.exception.AuthException;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.repository.TenantOnboardingRepository;
 import com.mtbs.tenant.service.TenantService;
 import com.mtbs.tenant.service.TenantFlywayMigrationService;
-import com.mtbs.tenant.service.PlanService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,16 +26,15 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Handles Phase 0 of the onboarding flow — account creation only.
+ * Handles shop signup — account creation only.
  *
  * Responsibilities:
- *  1. Validate email uniqueness across all tenant schemas (via public lookup)
- *  2. Create Tenant row in public schema with status=PENDING_ONBOARDING
+ *  1. Validate email uniqueness across all shop schemas (via public lookup)
+ *  2. Create Tenant row in public schema, ACTIVE immediately (no onboarding wizard)
  *  3. Provision PostgreSQL schema via Flyway
- *  4. Create ROLE_OWNER user in the new schema via TenantScopedAuthService
- *  5. Create TenantOnboarding record in public schema
- *  6. Fire USER_REGISTERED notification (welcome email)
- *  7. Return JWT — tenant can now navigate the app and resume onboarding
+ *  4. Create ROLE_OWNER user in the new schema via TenantAuthService
+ *  5. Fire USER_REGISTERED notification (welcome email)
+ *  6. Return JWT — the shop can use the app immediately
  *
  * NOT @Transactional at this level — public tenant save and tenant-schema
  * user creation must be in separate transaction boundaries (different schemas).
@@ -50,12 +45,10 @@ import java.util.Map;
 public class SignupService {
 
     private final TenantService tenantService;
-    private final TenantOnboardingRepository onboardingRepository;
     private final TenantFlywayMigrationService tenantFlywayMigrationService;
     private final TenantAuthService tenantScopedAuthService;
     private final OutboxEventPublisher outboxEventPublisher;
     private final CookieUtils cookieUtils;
-    private final PlanService planService;
 
     public AuthResponse signup(SignupRequest request, HttpServletResponse response) {
         log.info("New signup request for email={}", request.getEmail());
@@ -69,7 +62,7 @@ public class SignupService {
         String provisionalSlug = deriveProvisionalSlug(request.getEmail());
         String schemaName = "schema_" + provisionalSlug + "_" + System.currentTimeMillis();
 
-        // 3. Persist Tenant row in public schema
+        // 3. Persist Tenant row in public schema, ACTIVE immediately
         Tenant tenant = saveTenant(request, schemaName, provisionalSlug);
 
         // 4. Provision schema + run all tenant Flyway migrations
@@ -94,10 +87,7 @@ public class SignupService {
             cookieUtils.addAuthCookies(response, tokenPair.getAccessToken(), tokenPair.getRefreshToken());
         }
 
-        // 7. Create onboarding record in public schema (after JWT is issued)
-        saveOnboardingRecord(tenant.getId());
-
-        // 8. Fire welcome notification — async, never blocks signup
+        // 7. Fire welcome notification — async, never blocks signup
         fireWelcomeNotification(request, tenant);
 
         log.info("Signup complete for tenantId={}, schemaName={}", tenant.getId(), schemaName);
@@ -112,39 +102,24 @@ public class SignupService {
                 .name(request.getName())
                 .schemaName(schemaName)
                 .slug(provisionalSlug)
-                .status(Status.PENDING_ONBOARDING)
-                .onboardingStep(0)
+                .status(Status.ACTIVE)
                 .ownerEmail(request.getEmail())
                 .build();
-        Tenant savedTenant = tenantService.saveTenant(tenant);
-
-        // Skip audit event during signup - schema not yet created
-        // Audit event can be fired after onboarding completes
-
-        return savedTenant;
-    }
-
-    @Transactional
-    public void saveOnboardingRecord(Long tenantId) {
-        TenantOnboarding record = TenantOnboarding.builder()
-                .tenantId(tenantId)
-                .kycStatus(KycStatus.PENDING)
-                .build();
-        onboardingRepository.save(record);
+        return tenantService.saveTenant(tenant);
     }
 
     @Transactional
     public void markTenantFailed(Long tenantId) {
-        tenantService.updateTenantStatus(tenantId, Status.ONBOARDING_ABANDONED);
+        tenantService.updateTenantStatus(tenantId, Status.INACTIVE);
 
         outboxEventPublisher.save(AuditLogEvent.builder()
                 .action(AuditAction.STATUS_CHANGE)
                 .entityType(AuditEntityType.TENANT)
                 .entityId(tenantId)
                 .entityName("Tenant")
-                .changesBefore(Map.of("status", Status.PENDING_ONBOARDING.name()))
-                .changesAfter(Map.of("status", Status.ONBOARDING_ABANDONED.name()))
-                .description("Tenant onboarding failed")
+                .changesBefore(Map.of("status", Status.ACTIVE.name()))
+                .changesAfter(Map.of("status", Status.INACTIVE.name()))
+                .description("Shop schema provisioning failed")
                 .module("TENANT_MANAGEMENT")
                 .severity("WARN")
                 .build(), "Tenant", tenantId);

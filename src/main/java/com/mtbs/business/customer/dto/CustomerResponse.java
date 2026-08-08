@@ -19,13 +19,7 @@ public class CustomerResponse {
     private String phone;
     private String address;
     private String gstin;
- 
-    /**
-     * Razorpay customer ID (cust_XXXX).
-     * Null if the customer has not yet been synced to Razorpay.
-     */
-    private String razorpayCustomerId;
- 
+
     private Instant createdAt;
     private Instant updatedAt;
 }

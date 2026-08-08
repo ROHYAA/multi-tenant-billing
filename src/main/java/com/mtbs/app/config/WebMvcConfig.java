@@ -1,21 +1,13 @@
 package com.mtbs.app.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import com.mtbs.tenant.interceptor.PlanLimitInterceptor;
 
+/**
+ * The plan-usage-limit interceptor that used to be registered here lived in
+ * the archived legacy.saasbilling.tenant.interceptor package and was removed
+ * along with the platform-billing module.
+ */
 @Configuration
-@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
-
-    private final PlanLimitInterceptor planLimitInterceptor;
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(planLimitInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**", "/api/plans/**", "/api/webhooks/**", "/api/onboarding/**", "/actuator/**");
-    }
 }

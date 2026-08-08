@@ -7,7 +7,7 @@ import com.mtbs.tenant.entity.Tenant;
 import com.mtbs.auth.entity.User;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.enums.notification.NotificationEvent;
-import com.mtbs.billing.event.outbox.OutboxEventPublisher;
+import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.event.auth.AuthNotificationEvent;
 import com.mtbs.shared.event.audit.AuditLogEvent;
 import com.mtbs.shared.enums.audit.AuditAction;
@@ -89,8 +89,10 @@ public class TenantAuthService {
         tokenPair.setRefreshToken(refreshTokenService.createRefreshToken(savedUser).getToken());
 
         long expiresIn = jwtTokenProvider.getJwtExpiration() / 1000;
-        boolean isTrial = tenant.getPlan() != null && "FREE".equals(tenant.getPlan().getCode());
-        boolean requiresOnboarding = tenant.getOnboardingStep() == null || tenant.getOnboardingStep() < 3;
+        // Plan/subscription concept archived with the platform-billing module —
+        // every shop is fully active immediately after signup, no onboarding wizard.
+        boolean isTrial = false;
+        boolean requiresOnboarding = false;
 
         log.info("ROLE_OWNER created with userId={} for tenantId={}", savedUser.getId(), tenant.getId());
 
@@ -146,8 +148,10 @@ public class TenantAuthService {
                 .map(name -> name.startsWith("PERMISSION_") ? name.substring("PERMISSION_".length()) : name)
                 .collect(Collectors.toList());
 
-        boolean isTrial = tenant.getPlan() != null && "FREE".equals(tenant.getPlan().getCode());
-        boolean requiresOnboarding = tenant.getOnboardingStep() == null || tenant.getOnboardingStep() < 3;
+        // Plan/subscription concept archived with the platform-billing module —
+        // every shop is fully active immediately after signup, no onboarding wizard.
+        boolean isTrial = false;
+        boolean requiresOnboarding = false;
 
         outboxEventPublisher.save(AuthNotificationEvent.builder()
                 .eventType(NotificationEvent.USER_LOGIN)
@@ -219,8 +223,10 @@ public class TenantAuthService {
                 .map(name -> name.startsWith("PERMISSION_") ? name.substring("PERMISSION_".length()) : name)
                 .collect(Collectors.toList());
 
-        boolean isTrial = tenant.getPlan() != null && "FREE".equals(tenant.getPlan().getCode());
-        boolean requiresOnboarding = tenant.getOnboardingStep() == null || tenant.getOnboardingStep() < 3;
+        // Plan/subscription concept archived with the platform-billing module —
+        // every shop is fully active immediately after signup, no onboarding wizard.
+        boolean isTrial = false;
+        boolean requiresOnboarding = false;
 
         return AuthResponse.forTenantUser(
                 expiresIn,

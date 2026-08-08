@@ -4,8 +4,6 @@ import com.mtbs.business.payment.dto.BusinessPaymentResponse;
 import com.mtbs.business.payment.dto.RecordPaymentRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.business.payment.service.BusinessPaymentService;
-import com.mtbs.shared.annotation.TrackUsage;
-import com.mtbs.shared.enums.billing.UsageMetric;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +36,6 @@ public class BusinessPaymentController {
     // ── POST /api/business-payments/{invoiceId} ───────────────────────────────
 
     @PostMapping("/{invoiceId}")
-    @TrackUsage(metric = UsageMetric.API_CALLS)
     @Operation(
         summary = "Record a payment",
         description = "Records a payment received from a customer against an OPEN invoice. " +
