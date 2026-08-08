@@ -102,7 +102,7 @@ public class PaymentService {
             invoiceService.markPaid(invoiceId);
             log.info("Invoice fully paid — invoiceId={}, totalCollected={}", invoiceId, totalPaid);
 
-            // Fire BUSINESS_PAYMENT_RECORDED event after full payment
+            // Fire PAYMENT_RECORDED event after full payment
             Customer customer = customerService.getEntityById(invoice.getCustomerId());
             firePaymentEvent(invoice, customer, saved);
         }
@@ -155,7 +155,7 @@ public class PaymentService {
             extra.put("outstandingAmount", outstanding.toPlainString());
 
             outboxEventPublisher.save(BillEvent.builder()
-                    .eventType(NotificationEvent.BUSINESS_PAYMENT_RECORDED)
+                    .eventType(NotificationEvent.PAYMENT_RECORDED)
                     .tenantId(tenantId)
                     .tenantName(tenantName)
                     .recipientEmail(customer.getEmail())
@@ -165,7 +165,7 @@ public class PaymentService {
                     .build(), "Bill", invoice.getId());
 
         } catch (Exception e) {
-            log.warn("Failed to fire BUSINESS_PAYMENT_RECORDED for invoiceId={}: {}",
+            log.warn("Failed to fire PAYMENT_RECORDED for invoiceId={}: {}",
                     invoice.getId(), e.getMessage());
         }
     }

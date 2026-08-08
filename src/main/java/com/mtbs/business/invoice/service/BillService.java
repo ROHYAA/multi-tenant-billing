@@ -203,7 +203,7 @@ public class BillService {
 
     /**
      * Sends the invoice to the customer via email.
-     * Fires BUSINESS_INVOICE_SENT notification event.
+     * Fires BILL_SENT notification event.
      * Invoice must be in OPEN status before sending.
      * (PDF generation is wired in Phase 4 — event fires immediately.)
      */
@@ -478,7 +478,7 @@ public class BillService {
             }
 
             outboxEventPublisher.save(BillEvent.builder()
-                    .eventType(NotificationEvent.BUSINESS_INVOICE_SENT)
+                    .eventType(NotificationEvent.BILL_SENT)
                     .tenantId(SecurityUtils.getCurrentTenantId())
                     .tenantName(tenantName)
                     .recipientEmail(customer.getEmail())
@@ -493,7 +493,7 @@ public class BillService {
                     .build(), "Bill", invoice.getId());
 
         } catch (Exception e) {
-            log.warn("Failed to fire BUSINESS_INVOICE_SENT for invoiceId={}: {}",
+            log.warn("Failed to fire BILL_SENT for invoiceId={}: {}",
                     invoice.getId(), e.getMessage());
         }
     }

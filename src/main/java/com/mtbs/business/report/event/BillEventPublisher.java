@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * Listener: NotificationService.handleBillingEvent(BillEvent)
  *
  * Events routed through this publisher:
- *   BUSINESS_INVOICE_SENT, BUSINESS_PAYMENT_RECORDED
+ *   BILL_SENT, PAYMENT_RECORDED
  */
 @Component
 @RequiredArgsConstructor

@@ -154,7 +154,7 @@ public class BillController {
     @PostMapping("/{id}/send")
     @Operation(
         summary = "Send invoice to customer",
-        description = "Fires a BUSINESS_INVOICE_SENT notification event. " +
+        description = "Fires a BILL_SENT notification event. " +
                       "The NotificationService picks this up asynchronously and emails the customer. " +
                       "Invoice must be in OPEN status before sending. " +
                       "Returns 400 if the invoice is not OPEN. " +

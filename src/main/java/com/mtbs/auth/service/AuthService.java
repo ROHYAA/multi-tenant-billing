@@ -110,7 +110,6 @@ public class AuthService {
         // Step 2: Load tenant with plan for status check
         Shop tenant = tenantService.getTenantById(tenantId);
 
-        // Allow refresh for ACTIVE and PENDING_ONBOARDING tenants
         if (tenant.getStatus() == Status.SUSPENDED || tenant.getStatus() == Status.INACTIVE) {
             throw TenantException.suspended(tenant.getId());
         }

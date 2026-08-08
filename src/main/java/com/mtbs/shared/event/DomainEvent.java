@@ -41,7 +41,7 @@ public interface DomainEvent {
     /**
      * Discriminator string used for routing, serialization, and outbox storage.
      * Should return the NotificationEvent name or a stable event type identifier.
-     * Example: "USER_REGISTERED", "INVOICE_PAID", "BUSINESS_INVOICE_SENT"
+     * Example: "USER_REGISTERED", "INVOICE_PAID", "BILL_SENT"
      */
     String getEventType();
 }

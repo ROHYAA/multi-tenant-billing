@@ -4,7 +4,5 @@ public enum Status {
     ACTIVE,
     INACTIVE,
     SUSPENDED,
-    REGISTERED,
-    PENDING_ONBOARDING,
-    ONBOARDING_ABANDONED
+    REGISTERED
 }
