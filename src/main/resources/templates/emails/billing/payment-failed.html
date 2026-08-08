@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Payment failed</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        we were unable to process your payment for
+        <strong th:text="${tenantName}">Acme</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>Amount</td>
+            <td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${paymentAmount}">—</span></td></tr>
+        <tr><td>Payment ID</td><td th:text="${paymentId}">—</td></tr>
+        <tr><td>Method</td><td th:text="${paymentMethod}">—</td></tr>
+    </table>
+    <div class="alert-box alert-danger">
+        ⚠ Please update your payment method to avoid service interruption.
+        We will retry <strong th:text="${maxRetries}">3</strong> times automatically.
+    </div>
+    <a th:href="${frontendUrl + '/billing/payment'}" class="btn btn-danger">
+        Update Payment Method
+    </a>
+</th:block>
+</body>
+</html>

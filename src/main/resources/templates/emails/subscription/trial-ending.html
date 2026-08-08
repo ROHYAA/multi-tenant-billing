@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Your trial is ending soon ⏰</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your free trial on <strong th:text="${tenantName}">organisation</strong> will end in
+        <strong>3 days</strong>. Upgrade now to keep all your data and features.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Current Plan</div>
+        <div class="value" th:text="${planName}">—</div>
+    </div>
+    <table class="detail-table">
+        <tr><td>Trial Ends</td><td th:text="${trialEndsAt}">—</td></tr>
+    </table>
+    <div class="alert-box alert-warning">
+        After your trial ends, your account will be downgraded to the Free plan.
+        You can upgrade anytime before or after expiration.
+    </div>
+    <a th:href="${frontendUrl + '/subscription/upgrade'}" class="btn">
+        Upgrade Now →
+    </a>
+</th:block>
+</body>
+</html>

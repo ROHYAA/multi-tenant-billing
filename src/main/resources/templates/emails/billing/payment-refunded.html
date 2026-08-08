@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Refund processed 💰</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your refund has been processed successfully.
+    </p>
+    <table class="detail-table">
+        <tr><td>Refund Amount</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${paymentAmount}">—</span></td></tr>
+        <tr><td>Payment ID</td><td th:text="${paymentId}">—</td></tr>
+    </table>
+    <p class="text">
+        The refund will be credited to your original payment method within 5-7 business days,
+        depending on your bank or card issuer.
+    </p>
+    <a th:href="${frontendUrl + '/billing'}" class="btn">
+        View Billing History →
+    </a>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+
+<th:block th:fragment="content">
+
+    <p class="greeting">Hi <span th:text="${recipientName}">there</span>,</p>
+
+    <p class="text">
+        Your account setup is complete. Welcome aboard!
+        <strong th:text="${tenantName}">Your Company</strong> is now
+        active and ready to use.
+    </p>
+
+    <!-- Success badge -->
+    <div class="alert-box alert-success" style="text-align:center; margin:24px 0;">
+        <span style="font-size:22px;">&#10003;</span>
+        <strong style="display:block; font-size:16px; margin-top:6px;">
+            Onboarding Complete
+        </strong>
+        <span th:if="${planName}"
+              style="font-size:13px; display:block; margin-top:4px;">
+      Active plan: <strong th:text="${planName}">Free Plan</strong>
+    </span>
+    </div>
+
+    <!-- What you can do -->
+    <div class="highlight-box">
+        <div class="label">Here's what you can do now</div>
+        <table style="width:100%; margin-top:10px; border-collapse:collapse;">
+            <tr><td style="padding:6px 0; font-size:14px; color:#374151;">✦ &nbsp; Manage your customers and product catalog</td></tr>
+            <tr><td style="padding:6px 0; font-size:14px; color:#374151;">✦ &nbsp; Create and send invoices to your customers</td></tr>
+            <tr><td style="padding:6px 0; font-size:14px; color:#374151;">✦ &nbsp; Track payments and generate revenue reports</td></tr>
+            <tr><td style="padding:6px 0; font-size:14px; color:#374151;">✦ &nbsp; Invite team members and assign roles</td></tr>
+        </table>
+    </div>
+
+    <hr class="divider"/>
+
+    <p class="text" style="font-size:13px; color:#6b7280;">
+        If you have any questions, reply to this email and we'll be happy to help.
+    </p>
+
+</th:block>
+
+</body>
+</html>

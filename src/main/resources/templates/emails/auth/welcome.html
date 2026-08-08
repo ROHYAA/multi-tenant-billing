@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Welcome, <span th:text="${recipientName}">User</span>! 🎉</p>
+    <p class="text">
+        Your <strong th:text="${tenantName}">organisation</strong> account has been created
+        successfully on MTBS Platform. You're all set to start managing your tasks,
+        team, and billing from one place.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Organisation</div>
+        <div class="value" th:text="${tenantName}">Acme Corp</div>
+    </div>
+    <a th:href="${frontendUrl + '/dashboard'}" class="btn">Go to Dashboard →</a>
+    <hr class="divider"/>
+    <p class="text" style="font-size:13px; color:#6b7280;">
+        If you did not create this account, please contact our support team immediately.
+    </p>
+</th:block>
+</body>
+</html>

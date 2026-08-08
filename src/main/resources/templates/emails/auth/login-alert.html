@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">New login detected</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>, we noticed a new login to your account.
+    </p>
+    <table class="detail-table">
+        <tr><td>Time</td><td th:text="${eventTime}">—</td></tr>
+        <tr><td>IP Address</td><td th:text="${ipAddress}">—</td></tr>
+        <tr><td>Device</td><td th:text="${deviceInfo}">—</td></tr>
+    </table>
+    <p class="text">If this was you, no action is needed.</p>
+    <div class="alert-box alert-warning">
+        ⚠ If you don't recognise this login, change your password immediately.
+    </div>
+    <a th:href="${frontendUrl + '/settings/security'}" class="btn btn-danger">
+        Secure My Account
+    </a>
+</th:block>
+</body>
+</html>

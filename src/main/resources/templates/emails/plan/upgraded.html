@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Plan upgraded 🚀</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        congratulations! You've successfully upgraded from <strong th:text="${oldPlanName}">Free</strong>
+        to <strong th:text="${planName}">Pro</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>New Plan</td><td th:text="${planName}">—</td></tr>
+        <tr><td>Billing Cycle</td><td th:text="${billingCycle}">—</td></tr>
+        <tr><td>Price</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${planPrice}">—</span></td></tr>
+        <tr><td>Next Billing</td><td th:text="${nextBillingDate}">—</td></tr>
+    </table>
+    <div class="alert-box alert-success">
+        Your new plan features are now active. Enjoy the enhanced experience!
+    </div>
+    <a th:href="${frontendUrl + '/dashboard'}" class="btn btn-success">
+        Explore New Features →
+    </a>
+</th:block>
+</body>
+</html>

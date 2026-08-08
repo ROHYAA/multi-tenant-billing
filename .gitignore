@@ -1,0 +1,214 @@
+# =============================================================================
+# SECRETS & ENVIRONMENT (CRITICAL - NEVER COMMIT)
+# =============================================================================
+.env
+.env.dev
+.env.prod
+.env.local
+.env.staging
+.env.test
+.env.*
+!.env.example
+
+# Spring profile configs with secrets
+application-prod.yml
+application-prod.yaml
+application-local.yml
+application-local.yaml
+
+# =============================================================================
+# JAVA & MAVEN BUILD ARTIFACTS
+# =============================================================================
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+nul
+
+# Maven wrapper binary (optional: commit if team standardizes Maven version)
+.mvn/wrapper/maven-wrapper.jar
+
+# Maven local repo (never commit)
+.m2/
+
+# =============================================================================
+# LOGS
+# =============================================================================
+logs/
+*.log
+*.log.*
+log/
+/log
+nohup.out
+
+# =============================================================================
+# DOCUMENTATION & GENERATED FILES
+# =============================================================================
+# New clean documentation (tracked) — exclude reference-docs only
+reference-docs/
+/doc
+*.pdf
+*.docx
+
+# =============================================================================
+# IDE - IntelliJ IDEA
+# =============================================================================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+
+# IntelliJ run configs may contain env vars - exclude all except shared ones
+# If you want to share run configs, use: !.idea/runConfigurations/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+
+# =============================================================================
+# IDE - Eclipse / STS (Spring Tool Suite)
+# =============================================================================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+.recommenders/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# =============================================================================
+# IDE - VS Code
+# =============================================================================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# =============================================================================
+# IDE - NetBeans
+# =============================================================================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =============================================================================
+# OS GENERATED FILES
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Icon?
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# FLYWAY
+# =============================================================================
+# Never ignore migration files — they are code
+# But ignore local repair/undo scripts if any
+flyway-repair.sql
+undo/
+
+# =============================================================================
+# DOCKER (local overrides only)
+# =============================================================================
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# =============================================================================
+# TESTING & COVERAGE
+# =============================================================================
+/coverage/
+*.exec
+jacoco.exec
+jacoco/
+surefire-reports/
+test-results/
+allure-results/
+allure-report/
+
+# =============================================================================
+# SECURITY & CERTIFICATES
+# =============================================================================
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.truststore
+*.crt
+*.cer
+*.pfx
+*.csr
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# =============================================================================
+# TEMPORARY & CACHE FILES
+# =============================================================================
+*.temp
+*.cache
+.cache/
+*.pid
+*.seed
+*.pid.lock
+
+# =============================================================================
+# PACKAGE MANAGERS (if frontend added later)
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.pnp.*
+
+# =============================================================================
+# WHAT TO EXPLICITLY KEEP (overrides above rules)
+# =============================================================================
+!.gitignore
+!.gitattributes

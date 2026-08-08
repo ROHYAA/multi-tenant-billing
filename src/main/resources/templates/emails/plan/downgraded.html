@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Plan downgraded</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your plan has been changed to <strong th:text="${planName}">Free</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>New Plan</td><td th:text="${planName}">—</td></tr>
+        <tr><td>Billing Cycle</td><td th:text="${billingCycle}">—</td></tr>
+        <tr><td>Effective Date</td><td th:text="${subscriptionEndsAt}">—</td></tr>
+    </table>
+    <div class="alert-box alert-warning">
+        Some features may be limited. You can upgrade anytime to restore full access.
+    </div>
+    <a th:href="${frontendUrl + '/subscription/upgrade'}" class="btn">
+        Upgrade Again →
+    </a>
+</th:block>
+</body>
+</html>

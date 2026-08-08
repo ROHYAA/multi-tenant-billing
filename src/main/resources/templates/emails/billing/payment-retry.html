@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Payment retry scheduled</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        we're retrying your payment for invoice <strong th:text="${invoiceNumber}">—</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>Invoice Number</td><td th:text="${invoiceNumber}">—</td></tr>
+        <tr><td>Amount</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${invoiceAmount}">—</span></td></tr>
+        <tr><td>Retry Attempt</td><td>Attempt <span th:text="${retryAttempt}">—</span> of <span th:text="${maxRetries}">—</span></td></tr>
+    </table>
+    <div class="alert-box alert-warning">
+        Please ensure your payment method has sufficient funds.
+        If you need to update your payment method, click below.
+    </div>
+    <a th:href="${frontendUrl + '/billing/payment-method'}" class="btn">
+        Update Payment Method →
+    </a>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,127 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# application-test.yaml
+# Test profile — uses local PostgreSQL, disables external integrations.
+#
+# ACTIVATE: @ActiveProfiles("test") on test classes
+#           or: spring.profiles.active=test in test runner
+#
+# PREREQUISITE — run once on your local machine:
+#   psql -U postgres -c "CREATE DATABASE mtbs_test;"
+#   psql -U postgres -c "CREATE USER mtbs_test_user WITH PASSWORD 'test';"
+#   psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE mtbs_test TO mtbs_test_user;"
+#
+# Flyway public migrations run automatically on context load.
+# Tenant schema migrations are run manually inside tests via
+# TenantFlywayMigrationService or a @BeforeEach helper method.
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+
+  # ── Database ─────────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mtbs_test
+    username: mtbs_test_user
+    password: test
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 10000
+      idle-timeout: 60000
+
+  # ── JPA ──────────────────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: none                  # Flyway manages schema — never let Hibernate touch it
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+  # ── Flyway ───────────────────────────────────────────────────────────────────
+  # Public schema migrations run on startup via FlywayConfig bean.
+  # Tenant migrations run programmatically via TenantFlywayMigrationService.
+  flyway:
+    enabled: false                    # Disabled — FlywayConfig bean handles it
+
+  # ── Redis ─────────────────────────────────────────────────────────────────────
+  # Using local Redis. Disable if Redis is not running locally:
+  # set spring.cache.type=none and spring.data.redis.repositories.enabled=false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+  cache:
+    type: redis
+
+  # ── Mail ─────────────────────────────────────────────────────────────────────
+  # Disabled — NotificationService is @Async so failures are swallowed.
+  # Mocked at service level via @MockBean in individual tests.
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  # ── Quartz ───────────────────────────────────────────────────────────────────
+  # In-memory mode for tests — no QRTZ_* tables needed in test schema.
+  # Jobs are tested by calling execute() directly, not via scheduler trigger.
+  quartz:
+    job-store-type: memory
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: TestScheduler
+          threadPool:
+            threadCount: 1
+
+# ── JWT ──────────────────────────────────────────────────────────────────────
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 900000              # 15 minutes — short for tests
+  refresh-expiration: 3600000     # 1 hour
+
+# ── Razorpay ─────────────────────────────────────────────────────────────────
+# Fake keys — Razorpay SDK is mocked in all payment tests via @MockBean.
+razorpay:
+  key-id: rzp_test_FAKE_KEY_FOR_TESTS
+  key-secret: FAKE_SECRET_FOR_TESTS
+  webhook-secret: FAKE_WEBHOOK_SECRET
+  currency: INR
+
+# ── App settings ─────────────────────────────────────────────────────────────
+app:
+  cookie:
+    secure: false                   # HTTP is fine in tests — no HTTPS required
+  mail:
+    from-address: test@mtbs-test.local
+    from-name: MTBS Test
+  frontend-url: http://localhost:3000
+  auth:
+    rate-limit:
+      max-attempts: 100             # Effectively disabled — tests shouldn't hit rate limits
+      window-minutes: 60
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: WARN
+    com.mtbs: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE    # Shows bind parameters in SQL
+    org.flywaydb: INFO
+
+# ── Swagger ──────────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Subscription activated 🎉</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your subscription is now active! Welcome to <strong th:text="${planName}">Pro</strong> plan.
+    </p>
+    <table class="detail-table">
+        <tr><td>Plan</td><td th:text="${planName}">—</td></tr>
+        <tr><td>Billing Cycle</td><td th:text="${billingCycle}">—</td></tr>
+        <tr><td>Price</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${planPrice}">—</span></td></tr>
+        <tr><td>Next Billing</td><td th:text="${nextBillingDate}">—</td></tr>
+    </table>
+    <div class="alert-box alert-success">
+        Your subscription is active. Thank you for your purchase!
+    </div>
+    <a th:href="${frontendUrl + '/dashboard'}" class="btn btn-success">
+        Go to Dashboard →
+    </a>
+</th:block>
+</body>
+</html>

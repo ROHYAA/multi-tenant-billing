@@ -1,0 +1,134 @@
+spring:
+  application:
+    name: MultiTenantBillingSystem
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    open-in-view: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        multiTenancy: SCHEMA
+        multi_tenant_connection_provider: com.mtbs.multitenancy.SchemaBasedMultiTenantConnectionProvider
+        tenant_identifier_resolver: com.mtbs.multitenancy.CurrentTenantIdentifierResolverImpl
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      timeout: 6000ms
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: MTBSScheduler
+            instanceId: AUTO
+          jobStore:
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+            useProperties: true
+            tablePrefix: QRTZ_
+            isClustered: true
+            clusterCheckinInterval: 15000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 5
+            threadPriority: 5
+
+  cache:
+    type: redis
+
+server:
+  port: 8080
+
+api:
+  version: v1
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+  issuer: ${JWT_REFRESH_ISSUER}
+  audience: ${JWT_REFRESH_AUDIENCE}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID}
+  key-secret: ${RAZORPAY_KEY_SECRET}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+  currency: INR
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+app:
+  cookie:
+    secure: false
+  mail:
+    from-address: ${MAIL_FROM_ADDRESS}
+    from-name: MTBS Platform
+  frontend-url: ${FRONTEND_URL}
+  password-reset:
+    token-ttl-minutes: 15
+  auth:
+    rate-limit:
+      max-attempts: 5
+      window-minutes: 15
+  outbox:
+    poll-interval-ms: 5000
+    batch-size: 100
+    lock-duration-seconds: 30
+    max-retries: 5
+    cleanup-cron: "0 0 3 * * ?"
+  audit:
+    enabled: true
+    retention-days: 365
+    cleanup-cron: "0 0 2 * * ?"
+    async-logging: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    root: INFO
+    com.mtbs: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{tenantId}] [%X{userId}] %-5level %logger{36} - %msg%n"

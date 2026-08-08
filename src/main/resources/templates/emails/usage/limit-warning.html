@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Usage limit warning ⚠</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        <strong th:text="${tenantName}">Acme</strong> has used
+        <strong th:text="${usagePercent}">80</strong>% of the
+        <strong th:text="${metricName}">API calls</strong> limit for this billing period.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Current Usage</div>
+        <div class="value">
+            <span th:text="${currentUsage}">800</span> /
+            <span th:text="${usageLimit}">1000</span>
+        </div>
+    </div>
+    <p class="text">
+        Upgrade your plan to increase limits and avoid service interruption.
+    </p>
+    <a th:href="${frontendUrl + '/billing/plans'}" class="btn">Upgrade Plan →</a>
+</th:block>
+</body>
+</html>

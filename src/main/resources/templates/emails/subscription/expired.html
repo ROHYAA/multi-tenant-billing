@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Subscription expired</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your subscription to <strong th:text="${planName}">Pro</strong> has expired.
+        Your account has been downgraded to the Free plan.
+    </p>
+    <table class="detail-table">
+        <tr><td>Expired Plan</td><td th:text="${planName}">—</td></tr>
+    </table>
+    <div class="alert-box alert-danger">
+        Some features may be limited until you renew your subscription.
+    </div>
+    <a th:href="${frontendUrl + '/subscription'}" class="btn">
+        Renew Subscription →
+    </a>
+</th:block>
+</body>
+</html>

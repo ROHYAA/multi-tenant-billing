@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+
+<th:block th:fragment="content">
+
+    <p class="greeting">
+        Hi <span th:text="${recipientName}">Customer</span>,
+    </p>
+
+    <p class="text">
+        Please find your invoice from
+        <strong th:text="${tenantName}">Your Company</strong>
+        attached to this email.
+    </p>
+
+    <!-- Invoice summary card -->
+    <div class="highlight-box">
+        <table style="width:100%; border-collapse:collapse;">
+            <tr>
+                <td style="font-size:12px; color:#6b7280; padding-bottom:4px;">INVOICE NUMBER</td>
+                <td style="font-size:12px; color:#6b7280; padding-bottom:4px; text-align:right;">AMOUNT DUE</td>
+            </tr>
+            <tr>
+                <td class="value" th:text="${invoiceNumber}">BINV-1-202603-0001</td>
+                <td class="value" style="text-align:right; color:#6366f1;">
+                    <span th:text="${currency + ' ' + (invoiceTotal ?: invoiceAmount)}">INR 5,000.00</span>
+                </td>
+            </tr>
+            <tr th:if="${dueDate}">
+                <td colspan="2" style="font-size:12px; color:#6b7280;
+                               padding-top:10px; border-top:1px solid #e5e7eb;">
+                    Payment due by
+                    <strong style="color:#111827;" th:text="${dueDate}">30 Apr 2026</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Pay Now button — only when payment link exists -->
+    <div th:if="${paymentLinkUrl}" style="text-align:center; margin:24px 0;">
+        <a th:href="${paymentLinkUrl}" class="btn">Pay Now</a>
+    </div>
+
+    <hr class="divider"/>
+
+    <p class="text" style="font-size:13px; color:#6b7280;">
+        The full invoice with a detailed breakdown is attached as a PDF.
+    </p>
+
+    <p class="text" style="font-size:13px; color:#9ca3af; margin-top:16px;">
+        If you have any questions about this invoice, please reply to this email
+        or contact <span th:text="${tenantName}">Your Company</span> directly.
+    </p>
+
+</th:block>
+
+</body>
+</html>

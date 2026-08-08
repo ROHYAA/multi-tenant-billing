@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Your free trial has started 🚀</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your <strong th:text="${planName}">PRO</strong> trial for
+        <strong th:text="${tenantName}">Acme</strong> is now active.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Trial ends on</div>
+        <div class="value" th:text="${trialEndsAt}">—</div>
+    </div>
+    <p class="text">
+        Explore all features during your trial. No charge until your trial ends.
+    </p>
+    <a th:href="${frontendUrl + '/dashboard'}" class="btn">Explore Features →</a>
+</th:block>
+</body>
+</html>

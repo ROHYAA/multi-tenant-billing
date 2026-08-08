@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Usage limit reached ⚠️</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        you've reached the limit for <strong th:text="${metricName}">—</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>Metric</td><td th:text="${metricName}">—</td></tr>
+        <tr><td>Usage</td><td th:text="${currentUsage}">—</td></tr>
+        <tr><td>Limit</td><td th:text="${usageLimit}">—</td></tr>
+    </table>
+    <div class="alert-box alert-danger">
+        You cannot use more of this feature until you upgrade or the limit resets.
+    </div>
+    <a th:href="${frontendUrl + '/subscription/upgrade'}" class="btn">
+        Upgrade Plan →
+    </a>
+</th:block>
+</body>
+</html>

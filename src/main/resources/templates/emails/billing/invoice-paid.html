@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Invoice paid ✅</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        we've received your payment. Thank you!
+    </p>
+    <table class="detail-table">
+        <tr><td>Invoice Number</td><td th:text="${invoiceNumber}">—</td></tr>
+        <tr><td>Amount Paid</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${invoiceAmount}">—</span></td></tr>
+        <tr><td>Payment ID</td><td th:text="${paymentId}">—</td></tr>
+    </table>
+    <div class="alert-box alert-success">
+        Your invoice has been paid. Your subscription is active.
+    </div>
+    <a th:href="${frontendUrl + '/billing/invoices'}" class="btn btn-success">
+        View Invoice →
+    </a>
+</th:block>
+</body>
+</html>

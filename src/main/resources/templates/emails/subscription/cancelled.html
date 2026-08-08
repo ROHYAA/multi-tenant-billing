@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Subscription cancelled</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your subscription has been cancelled.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Plan</div>
+        <div class="value" th:text="${planName}">—</div>
+    </div>
+    <p class="text">
+        Your access will remain active until the end of your current billing period.
+        After that, your account will be downgraded.
+    </p>
+    <div class="alert-box alert-warning">
+        You can reactivate your subscription anytime before the period ends.
+    </div>
+    <a th:href="${frontendUrl + '/subscription'}" class="btn">
+        Reactivate Subscription →
+    </a>
+</th:block>
+</body>
+</html>

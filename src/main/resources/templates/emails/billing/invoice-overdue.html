@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Invoice overdue ⚠️</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your invoice <strong th:text="${invoiceNumber}">—</strong> is overdue.
+        Please make the payment as soon as possible to avoid service interruption.
+    </p>
+    <table class="detail-table">
+        <tr><td>Invoice Number</td><td th:text="${invoiceNumber}">—</td></tr>
+        <tr><td>Amount Due</td><td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${invoiceAmount}">—</span></td></tr>
+        <tr><td>Due Date</td><td th:text="${invoiceDueDate}">—</td></tr>
+    </table>
+    <div class="alert-box alert-danger">
+        Failure to pay may result in suspension of your subscription.
+    </div>
+    <a th:href="${frontendUrl + '/billing/pay'}" class="btn btn-danger">
+        Pay Now →
+    </a>
+</th:block>
+</body>
+</html>

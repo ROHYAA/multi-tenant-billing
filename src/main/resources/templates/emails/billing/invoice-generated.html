@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Your invoice is ready</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        invoice <strong th:text="${invoiceNumber}">INV-001</strong> has been generated for
+        <strong th:text="${tenantName}">Acme</strong>.
+    </p>
+    <table class="detail-table">
+        <tr><td>Invoice #</td><td th:text="${invoiceNumber}">—</td></tr>
+        <tr><td>Amount</td>
+            <td><span th:text="${currency}">INR</span>&nbsp;<span th:text="${invoiceAmount}">—</span></td></tr>
+        <tr><td>Due date</td><td th:text="${invoiceDueDate}">—</td></tr>
+    </table>
+    <a th:href="${frontendUrl + '/billing/invoices'}" class="btn">View &amp; Download Invoice →</a>
+</th:block>
+</body>
+</html>

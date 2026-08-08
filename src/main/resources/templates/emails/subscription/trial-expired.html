@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Your trial has expired</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        your free trial on <strong th:text="${tenantName}">organisation</strong> has ended.
+        Your account has been downgraded to the Free plan.
+    </p>
+    <div class="highlight-box">
+        <div class="label">Plan Status</div>
+        <div class="value">Downgraded to Free</div>
+    </div>
+    <p class="text">
+        You can still access your data, but some features may be limited.
+        Upgrade anytime to restore full access.
+    </p>
+    <a th:href="${frontendUrl + '/subscription/upgrade'}" class="btn">
+        Upgrade Now →
+    </a>
+</th:block>
+</body>
+</html>
