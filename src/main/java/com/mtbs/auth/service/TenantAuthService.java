@@ -94,6 +94,17 @@ public class TenantAuthService {
         boolean isTrial = false;
         boolean requiresOnboarding = false;
 
+        // Same fetch as login/refresh — without this, a brand-new owner's
+        // first-ever AuthResponse had permissions=null, hiding every
+        // permission-gated UI element until their next login or token
+        // refresh (the schema's role_permissions are already seeded by
+        // Flyway before this method runs, so this is safe to read now).
+        String schemaName = schemaCacheService.resolveSchemaName(tenant.getId());
+        Set<String> permissionSet = permissionCacheService.getPermissions(schemaName, savedUser.getId(), ownerRole.getId());
+        List<String> permissions = permissionSet.stream()
+                .map(name -> name.startsWith("PERMISSION_") ? name.substring("PERMISSION_".length()) : name)
+                .collect(Collectors.toList());
+
         log.info("ROLE_OWNER created with userId={} for tenantId={}", savedUser.getId(), tenant.getId());
 
         return AuthResponse.forTenantUser(
@@ -102,7 +113,7 @@ public class TenantAuthService {
                 savedUser.getId(),
                 savedUser.getEmail(),
                 ownerRole.getName(),
-                null,
+                permissions,
                 tenant.getId(),
                 tenant.getName(),
                 savedUser.getIsFirstLogin(),
@@ -276,14 +287,27 @@ public class TenantAuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> ResourceException.notFound("User", String.valueOf(userId)));
 
+        // Same shape as login/refresh's AuthResponse.UserInfo.permissions — a
+        // frontend session restored via GET /auth/me (e.g. after a page
+        // reload) needs the same permission list a fresh login gets, or
+        // permission-gated UI silently under-shows until the next token
+        // refresh repopulates it.
+        String schemaName = schemaCacheService.resolveSchemaName(tenant.getId());
+        Set<String> permissionSet = permissionCacheService.getPermissions(schemaName, user.getId(), user.getRole().getId());
+        List<String> permissions = permissionSet.stream()
+                .map(name -> name.startsWith("PERMISSION_") ? name.substring("PERMISSION_".length()) : name)
+                .collect(Collectors.toList());
+
         return UserProfileResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().getName())
                 .tenantId(tenant.getId())
+                .tenantName(tenant.getName())
                 .schemaName(tenant.getSchemaName())
                 .status(user.getStatus())
+                .permissions(permissions)
                 .createdAt(user.getCreatedAt())
                 .build();
     }
