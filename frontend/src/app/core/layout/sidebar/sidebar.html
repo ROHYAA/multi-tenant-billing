@@ -1,0 +1,27 @@
+<div class="flex h-full flex-col">
+  <div class="flex items-center gap-2 px-5 py-5">
+    <span class="material-icons text-2xl text-[var(--mat-sys-primary)]">storefront</span>
+    <span class="text-lg font-semibold tracking-tight">ShopLedger</span>
+  </div>
+
+  <mat-nav-list class="flex-1 px-2">
+    @for (item of navItems(); track item.route) {
+      <a
+        mat-list-item
+        [routerLink]="item.route"
+        routerLinkActive="app-nav-active"
+        class="app-nav-item"
+      >
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+      </a>
+    }
+  </mat-nav-list>
+
+  <div class="border-t px-2 py-2" style="border-color: var(--mat-sys-outline-variant)">
+    <button mat-list-item class="app-nav-item w-full" (click)="logout()">
+      <mat-icon matListItemIcon>logout</mat-icon>
+      <span matListItemTitle>Logout</span>
+    </button>
+  </div>
+</div>

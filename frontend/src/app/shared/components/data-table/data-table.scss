@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.app-data-table-row {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--mat-sys-surface-container-highest);
+  }
+}

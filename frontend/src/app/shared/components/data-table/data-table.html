@@ -1,0 +1,44 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="!h-0.5" />
+}
+
+@if (page() && page()!.content.length > 0) {
+  <div class="overflow-x-auto rounded-lg border" style="border-color: var(--mat-sys-outline-variant)">
+    <table mat-table [dataSource]="page()!.content" matSort (matSortChange)="onSort($event)" class="w-full">
+      @for (column of columns(); track column.key) {
+        <ng-container [matColumnDef]="column.key">
+          @if (column.sortable) {
+            <th mat-header-cell *matHeaderCellDef mat-sort-header [style.text-align]="column.align ?? 'left'">
+              {{ column.header }}
+            </th>
+          } @else {
+            <th mat-header-cell *matHeaderCellDef [style.text-align]="column.align ?? 'left'">
+              {{ column.header }}
+            </th>
+          }
+          <td mat-cell *matCellDef="let row" [style.text-align]="column.align ?? 'left'">
+            {{ column.cell(row) }}
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns()"
+        class="app-data-table-row"
+        (click)="rowClick.emit(row)"
+      ></tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="page()!.totalElements"
+    [pageSize]="page()!.size"
+    [pageIndex]="page()!.page"
+    [pageSizeOptions]="pageSizeOptions()"
+    (page)="onPage($event)"
+  />
+} @else if (!loading()) {
+  <app-empty-state icon="table_rows" [title]="emptyTitle()" [message]="emptyMessage()" />
+}

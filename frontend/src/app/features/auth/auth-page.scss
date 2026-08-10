@@ -1,0 +1,14 @@
+// Shared by login/signup — full-height centered card, no shell.
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--mat-sys-surface-container-low);
+  padding: 1.5rem;
+}
+
+.app-auth-card {
+  width: 100%;
+  max-width: 420px;
+}

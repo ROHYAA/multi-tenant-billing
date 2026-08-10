@@ -1,0 +1,9 @@
+// Shared by not-found/forbidden/server-error — same centered-card layout,
+// different icon/copy per page.
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 2rem;
+}

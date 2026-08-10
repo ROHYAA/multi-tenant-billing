@@ -1,0 +1,54 @@
+// `@use` must be the very first rule in a Sass file — everything else
+// (including Tailwind's @import) has to come after it.
+@use '@angular/material' as mat;
+
+// Tailwind v4 — theme + utilities only, preflight (CSS reset) intentionally
+// excluded so it doesn't fight Angular Material's own base styles. Division
+// of labor: Material owns components, Tailwind owns layout/spacing utilities.
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+// Class-based dark mode (matches ThemeService toggling `.dark` on <html>),
+// not the media-query default.
+@custom-variant dark (&:where(.dark, .dark *));
+
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // Explicit toggle, not system-preference-based: Material's `--mat-sys-*`
+  // tokens use the CSS light-dark() function under the hood, which resolves
+  // against the nearest ancestor's `color-scheme` — so this one property is
+  // all Material needs to switch. ThemeService toggles the `dark` class.
+  color-scheme: light;
+
+  &.dark {
+    color-scheme: dark;
+  }
+}
+
+body {
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

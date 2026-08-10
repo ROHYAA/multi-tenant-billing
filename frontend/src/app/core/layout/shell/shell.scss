@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.app-sidenav {
+  width: 260px;
+  background-color: var(--mat-sys-surface);
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}

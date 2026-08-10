@@ -1,0 +1,45 @@
+@if (loadingService.isLoading()) {
+  <mat-progress-bar mode="indeterminate" class="app-loading-bar" />
+}
+<mat-toolbar class="app-topbar flex items-center gap-3 border-b px-3">
+  <button mat-icon-button class="md:hidden" (click)="menuToggle.emit()" aria-label="Toggle menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <div class="hidden flex-1 items-center gap-2 md:flex">
+    <mat-icon class="opacity-60">search</mat-icon>
+    <input
+      type="text"
+      placeholder="Search…"
+      class="w-full max-w-sm bg-transparent text-sm outline-none placeholder:opacity-60"
+      aria-label="Search"
+    />
+  </div>
+  <div class="flex-1 md:hidden"></div>
+
+  <button mat-icon-button matTooltip="Notifications" aria-label="Notifications" disabled>
+    <mat-icon>notifications_none</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    [matTooltip]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+    (click)="themeService.toggle()"
+  >
+    <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
+
+  <button mat-button [matMenuTriggerFor]="userMenu" class="ml-1 flex items-center gap-2">
+    <div class="flex flex-col items-end leading-tight">
+      <span class="text-sm font-medium">{{ authService.currentUser()?.email }}</span>
+      <span class="text-xs opacity-60">{{ authService.currentUser()?.tenantName }} · {{ authService.currentUser()?.role }}</span>
+    </div>
+    <mat-icon>account_circle</mat-icon>
+  </button>
+  <mat-menu #userMenu="matMenu">
+    <button mat-menu-item disabled>
+      <mat-icon>business</mat-icon>
+      <span>{{ authService.currentUser()?.tenantName }}</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>

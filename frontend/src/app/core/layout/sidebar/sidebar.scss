@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.app-nav-item {
+  border-radius: 8px;
+  margin-bottom: 2px;
+}
+
+::ng-deep .app-nav-active {
+  background-color: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

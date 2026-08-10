@@ -1,0 +1,18 @@
+<mat-sidenav-container class="h-screen">
+  <mat-sidenav
+    #drawer
+    class="app-sidenav"
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? mobileMenuOpen() : true"
+    (closedStart)="mobileMenuOpen.set(false)"
+  >
+    <app-sidebar />
+  </mat-sidenav>
+
+  <mat-sidenav-content class="flex h-full flex-col">
+    <app-topbar (menuToggle)="toggleMobileMenu()" />
+    <main class="flex-1 overflow-auto p-6">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,20 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  @if (data.danger) {
+    <mat-icon class="text-[var(--mat-sys-error)]">warning</mat-icon>
+  }
+  {{ data.title }}
+</h2>
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">{{ data.cancelLabel ?? 'Cancel' }}</button>
+  <button
+    mat-flat-button
+    [color]="data.danger ? 'warn' : 'primary'"
+    (click)="confirm()"
+    cdkFocusInitial
+  >
+    {{ data.confirmLabel ?? 'Confirm' }}
+  </button>
+</mat-dialog-actions>

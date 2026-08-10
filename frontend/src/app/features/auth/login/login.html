@@ -1,0 +1,55 @@
+<mat-card appearance="outlined" class="app-auth-card">
+  <mat-card-content class="!p-8">
+    <div class="mb-6 flex flex-col items-center gap-2 text-center">
+      <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-primary)]">storefront</mat-icon>
+      <h1 class="text-xl font-semibold">Welcome back</h1>
+      <p class="text-sm opacity-70">Sign in to your shop</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-1">
+      <mat-form-field appearance="outline">
+        <mat-label>Shop ID</mat-label>
+        <input matInput formControlName="tenantSlug" autocomplete="organization" placeholder="your-shop-name" />
+        @if (form.controls.tenantSlug.hasError('required') && form.controls.tenantSlug.touched) {
+          <mat-error>Shop ID is required</mat-error>
+        }
+        @if (serverError(form.controls.tenantSlug); as message) {
+          <mat-error>{{ message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="email" />
+        @if (form.controls.email.hasError('required') && form.controls.email.touched) {
+          <mat-error>Email is required</mat-error>
+        }
+        @if (form.controls.email.hasError('email') && form.controls.email.touched) {
+          <mat-error>Enter a valid email</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" autocomplete="current-password" />
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())" [attr.aria-label]="'Toggle password visibility'">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+          <mat-error>Password is required</mat-error>
+        }
+        @if (serverError(form.controls.password); as message) {
+          <mat-error>{{ message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" class="!mt-2 !h-11" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm opacity-70">
+      New shop? <a routerLink="/signup" class="font-medium text-[var(--mat-sys-primary)]">Create an account</a>
+    </p>
+  </mat-card-content>
+</mat-card>
