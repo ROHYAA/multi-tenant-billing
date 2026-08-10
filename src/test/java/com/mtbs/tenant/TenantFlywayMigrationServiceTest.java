@@ -88,9 +88,12 @@ class TenantFlywayMigrationServiceTest {
             assertTrue(tables.contains("users"), "users table should exist");
             assertTrue(tables.contains("roles"), "roles table should exist");
             assertTrue(tables.contains("refresh_tokens"), "refresh_tokens table should exist");
-            assertTrue(tables.contains("subscriptions"), "subscriptions table should exist");
-            assertTrue(tables.contains("invoices"), "invoices table should exist");
+            assertTrue(tables.contains("customers"), "customers table should exist");
+            assertTrue(tables.contains("bills"), "bills table should exist");
+            assertTrue(tables.contains("bill_items"), "bill_items table should exist");
             assertTrue(tables.contains("payments"), "payments table should exist");
+            assertFalse(tables.contains("subscriptions"), "subscriptions table should be dropped by V20");
+            assertFalse(tables.contains("invoices"), "invoices table should be dropped by V20");
         }
 
         @Test

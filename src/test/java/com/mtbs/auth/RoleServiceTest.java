@@ -16,7 +16,9 @@ import com.mtbs.auth.repository.UserRepository;
 import com.mtbs.auth.service.RoleService;
 import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.exception.ResourceException;
+import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestDataBuilder;
+import com.mtbs.support.TestSchemaHelper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = MultiTenantBillingSystemApplication.class)
 @ActiveProfiles("test")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("RoleService Integration Tests")
 class RoleServiceTest {
 
@@ -49,6 +50,24 @@ class RoleServiceTest {
 
     @Autowired
     private TestDataBuilder testDataBuilder;
+
+    @Autowired
+    private TestSchemaHelper testSchemaHelper;
+
+    private String currentSchema;
+
+    @BeforeEach
+    void setUp() {
+        currentSchema = testSchemaHelper.createFreshSchema();
+        TenantContext.setTenantId(1L);
+        TenantContext.setCurrentSchema(currentSchema);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+        testSchemaHelper.dropSchema(currentSchema);
+    }
 
     @Nested
     @DisplayName("createRole")

@@ -37,7 +37,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: public
+        # No default_schema here: SchemaBasedMultiTenantConnectionProvider sets
+        # `search_path TO "<tenant>", public` per connection, so entity table
+        # names must stay unqualified for that resolution to take effect.
 
   # ── Flyway ───────────────────────────────────────────────────────────────────
   # Public schema migrations run on startup via FlywayConfig bean.
@@ -71,31 +73,34 @@ spring:
             enable: false
 
   # ── Quartz ───────────────────────────────────────────────────────────────────
-  # In-memory mode for tests — no QRTZ_* tables needed in test schema.
-  # Jobs are tested by calling execute() directly, not via scheduler trigger.
-  quartz:
-    job-store-type: memory
-    properties:
-      org:
-        quartz:
-          scheduler:
-            instanceName: TestScheduler
-          threadPool:
-            threadCount: 1
+  # Autoconfiguration excluded below — the base application.yaml's JDBC job-store
+  # properties (driverDelegateClass/useProperties/tablePrefix/isClustered) get
+  # merged into this profile's property map regardless of job-store-type, which
+  # breaks RAMJobStore (no matching setters). No active bean needs a Scheduler
+  # in tests; jobs are exercised by calling execute() directly.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration
 
 # ── JWT ──────────────────────────────────────────────────────────────────────
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 900000              # 15 minutes — short for tests
   refresh-expiration: 3600000     # 1 hour
+  issuer: mtbs-test
+  audience: mtbs-test-client
 
 # ── Razorpay ─────────────────────────────────────────────────────────────────
-# Fake keys — Razorpay SDK is mocked in all payment tests via @MockBean.
+# Fake keys — legacy.saasbilling's RazorpayPaymentGateway is not on the active
+# component-scan path, but QuartzAutoConfiguration aside, other autoconfigured
+# beans still resolve these placeholders eagerly at context startup.
 razorpay:
   key-id: rzp_test_FAKE_KEY_FOR_TESTS
   key-secret: FAKE_SECRET_FOR_TESTS
   webhook-secret: FAKE_WEBHOOK_SECRET
   currency: INR
+
+cors:
+  allowed-origins: http://localhost:3000
 
 # ── App settings ─────────────────────────────────────────────────────────────
 app:

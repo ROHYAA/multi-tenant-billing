@@ -1,13 +1,15 @@
 package com.mtbs.business;
 
 import com.mtbs.app.MultiTenantBillingSystemApplication;
+import com.mtbs.business.customer.entity.Customer;
+import com.mtbs.business.customer.repository.CustomerRepository;
 import com.mtbs.business.invoice.dto.AddBillItemRequest;
 import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.business.invoice.repository.BillItemRepository;
 import com.mtbs.business.invoice.repository.BillRepository;
 import com.mtbs.business.invoice.service.BillService;
-import com.mtbs.shared.enums.billing.InvoiceStatus;
+import com.mtbs.shared.enums.bill.InvoiceStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestSchemaHelper;
 import org.junit.jupiter.api.*;
@@ -34,15 +36,26 @@ class BillServiceTest {
     private BillItemRepository businessInvoiceItemRepository;
 
     @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
     private TestSchemaHelper testSchemaHelper;
 
     private String currentSchema;
+    private Long customerId;
 
     @BeforeEach
     void setUp() {
         currentSchema = testSchemaHelper.createFreshSchema();
         TenantContext.setTenantId(1L);
         TenantContext.setCurrentSchema(currentSchema);
+
+        // bills.customer_id has an FK into customers(id) — every fixture below
+        // needs a real row to point at.
+        customerId = customerRepository.save(Customer.builder()
+            .name("Test Customer")
+            .email("customer@test.com")
+            .build()).getId();
     }
 
     @AfterEach
@@ -64,7 +77,7 @@ class BillServiceTest {
                 .subtotal(BigDecimal.ZERO)
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(BigDecimal.ZERO)
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             AddBillItemRequest request = AddBillItemRequest.builder()
@@ -89,7 +102,7 @@ class BillServiceTest {
                 .subtotal(BigDecimal.ZERO)
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(BigDecimal.ZERO)
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             AddBillItemRequest request = AddBillItemRequest.builder()
@@ -117,7 +130,7 @@ class BillServiceTest {
                 .subtotal(new BigDecimal("200"))
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(new BigDecimal("200"))
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             BillItem item = businessInvoiceItemRepository.save(BillItem.builder()
@@ -130,7 +143,7 @@ class BillServiceTest {
             businessInvoiceService.removeLineItem(invoice.getId(), item.getId());
 
             Bill updated = businessInvoiceRepository.findById(invoice.getId()).orElseThrow();
-            assertEquals(BigDecimal.ZERO, updated.getTotalAmount());
+            assertEquals(0, BigDecimal.ZERO.compareTo(updated.getTotalAmount()));
         }
 
         @Test
@@ -142,7 +155,7 @@ class BillServiceTest {
                 .subtotal(new BigDecimal("100"))
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(new BigDecimal("100"))
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             BillItem item = businessInvoiceItemRepository.save(BillItem.builder()
@@ -171,7 +184,7 @@ class BillServiceTest {
                 .subtotal(new BigDecimal("100"))
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(new BigDecimal("100"))
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             var response = businessInvoiceService.voidInvoice(invoice.getId());
@@ -188,7 +201,7 @@ class BillServiceTest {
                 .subtotal(new BigDecimal("100"))
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(new BigDecimal("100"))
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             assertThrows(com.mtbs.shared.exception.ResourceException.class, () ->
@@ -210,7 +223,7 @@ class BillServiceTest {
                 .subtotal(new BigDecimal("100"))
                 .taxAmount(BigDecimal.ZERO)
                 .totalAmount(new BigDecimal("100"))
-                .customerId(1L)
+                .customerId(customerId)
                 .build());
 
             businessInvoiceItemRepository.save(BillItem.builder()
@@ -242,11 +255,11 @@ class BillServiceTest {
                     .subtotal(BigDecimal.ZERO)
                     .taxAmount(BigDecimal.ZERO)
                     .totalAmount(BigDecimal.ZERO)
-                    .customerId(1L)
+                    .customerId(customerId)
                     .build());
             }
 
-            var page = businessInvoiceService.list(1L, InvoiceStatus.DRAFT, org.springframework.data.domain.PageRequest.of(0, 10));
+            var page = businessInvoiceService.list(customerId, InvoiceStatus.DRAFT, org.springframework.data.domain.PageRequest.of(0, 10));
 
             assertNotNull(page);
             assertTrue(page.getTotalElements() >= 3);

@@ -2,24 +2,16 @@ package com.mtbs.support;
 
 import com.mtbs.auth.entity.Role;
 import com.mtbs.auth.entity.User;
-import com.mtbs.billing.entity.Subscription;
 import com.mtbs.shared.enums.auth.Status;
-import com.mtbs.shared.enums.billing.BillingCycle;
-import com.mtbs.shared.enums.billing.SubscriptionStatus;
 import com.mtbs.shared.multitenancy.TenantContext;
-import com.mtbs.tenant.entity.Plan;
 import com.mtbs.tenant.entity.Shop;
-import com.mtbs.tenant.repository.PlanRepository;
 import com.mtbs.tenant.repository.ShopRepository;
 import com.mtbs.auth.repository.RoleRepository;
 import com.mtbs.auth.repository.UserRepository;
-import com.mtbs.billing.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Component
@@ -28,20 +20,14 @@ import java.util.UUID;
 public class TestDataBuilder {
 
     private final ShopRepository tenantRepository;
-    private final PlanRepository planRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final SubscriptionRepository subscriptionRepository;
 
     public static final String DEFAULT_TEST_EMAIL = "test@example.com";
     public static final String DEFAULT_TEST_PASSWORD = "Test@123";
 
     public TenantBuilder tenant() {
         return new TenantBuilder(this);
-    }
-
-    public SubscriptionBuilder subscription() {
-        return new SubscriptionBuilder(this);
     }
 
     public UserBuilder user() {
@@ -51,22 +37,6 @@ public class TestDataBuilder {
     public void flush() {
         tenantRepository.flush();
         userRepository.flush();
-        subscriptionRepository.flush();
-    }
-
-    public Plan getFreePlan() {
-        return planRepository.findByName("FREE")
-                .orElseThrow(() -> new IllegalStateException("FREE plan not found in database"));
-    }
-
-    public Plan getProPlan() {
-        return planRepository.findByName("PRO")
-                .orElseThrow(() -> new IllegalStateException("PRO plan not found in database"));
-    }
-
-    public Plan getEnterprisePlan() {
-        return planRepository.findByName("ENTERPRISE")
-                .orElseThrow(() -> new IllegalStateException("ENTERPRISE plan not found in database"));
     }
 
     public Role getOwnerRole() {
@@ -120,75 +90,6 @@ public class TestDataBuilder {
             TenantContext.setTenantId(tenant.getId());
             TenantContext.setCurrentSchema(tenant.getSchemaName());
             return tenant;
-        }
-    }
-
-    public static class SubscriptionBuilder {
-        private final TestDataBuilder builder;
-        private Long planId;
-        private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
-        private BillingCycle billingCycle = BillingCycle.MONTHLY;
-        private Instant currentPeriodStart;
-        private Instant currentPeriodEnd;
-
-        SubscriptionBuilder(TestDataBuilder builder) {
-            this.builder = builder;
-            this.currentPeriodStart = Instant.now();
-            this.currentPeriodEnd = Instant.now().plus(30, ChronoUnit.DAYS);
-        }
-
-        public SubscriptionBuilder planId(Long planId) {
-            this.planId = planId;
-            return this;
-        }
-
-        public SubscriptionBuilder plan(Plan plan) {
-            this.planId = plan.getId();
-            return this;
-        }
-
-        public SubscriptionBuilder status(SubscriptionStatus status) {
-            this.status = status;
-            return this;
-        }
-
-        public SubscriptionBuilder billingCycle(BillingCycle billingCycle) {
-            this.billingCycle = billingCycle;
-            if (billingCycle == BillingCycle.ANNUAL) {
-                this.currentPeriodEnd = Instant.now().plus(365, ChronoUnit.DAYS);
-            } else {
-                this.currentPeriodEnd = Instant.now().plus(30, ChronoUnit.DAYS);
-            }
-            return this;
-        }
-
-        public SubscriptionBuilder currentPeriodStart(Instant start) {
-            this.currentPeriodStart = start;
-            return this;
-        }
-
-        public SubscriptionBuilder currentPeriodEnd(Instant end) {
-            this.currentPeriodEnd = end;
-            return this;
-        }
-
-        public SubscriptionBuilder daysRemaining(int days) {
-            this.currentPeriodEnd = Instant.now().plus(days, ChronoUnit.DAYS);
-            return this;
-        }
-
-        public Subscription build() {
-            if (planId == null) {
-                planId = builder.getFreePlan().getId();
-            }
-            Subscription sub = Subscription.builder()
-                    .planId(planId)
-                    .status(status)
-                    .billingCycle(billingCycle)
-                    .currentPeriodStart(currentPeriodStart)
-                    .currentPeriodEnd(currentPeriodEnd)
-                    .build();
-            return builder.subscriptionRepository.save(sub);
         }
     }
 

@@ -25,10 +25,16 @@ public class ArchitectureRulesTest {
         assertTrue(beanNames.length > 0, "Application should have beans");
         
         // Check core services exist
-        assertNotNull(applicationContext.getBean("subscriptionService"), "SubscriptionService should exist");
         assertNotNull(applicationContext.getBean("paymentService"), "PaymentService should exist");
-        assertNotNull(applicationContext.getBean("invoiceService"), "InvoiceService should exist");
+        assertNotNull(applicationContext.getBean("billService"), "BillService should exist");
         assertNotNull(applicationContext.getBean("authService"), "AuthService should exist");
+
+        // legacy.saasbilling sits outside the com.mtbs component-scan root and must
+        // never be wired into the active application context.
+        assertFalse(applicationContext.containsBean("subscriptionService"),
+            "SubscriptionService is archived to legacy.saasbilling and must not be an active bean");
+        assertFalse(applicationContext.containsBean("invoiceService"),
+            "InvoiceService (platform billing) is archived to legacy.saasbilling and must not be an active bean");
     }
 
     @Test

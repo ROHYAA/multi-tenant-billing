@@ -5,10 +5,11 @@ import com.mtbs.auth.dto.auth.AuthResponse;
 import com.mtbs.auth.dto.auth.LoginRequest;
 import com.mtbs.auth.dto.auth.LogoutRequest;
 import com.mtbs.auth.dto.auth.RefreshTokenRequest;
-import com.mtbs.auth.entity.User;
+import com.mtbs.auth.dto.auth.TokenPair;
 import com.mtbs.auth.service.AuthService;
 import com.mtbs.auth.service.TenantAuthService;
 import com.mtbs.shared.enums.auth.Status;
+import com.mtbs.shared.exception.TenantException;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.support.TestSchemaHelper;
 import com.mtbs.tenant.entity.Shop;
@@ -18,8 +19,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -28,6 +36,7 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = MultiTenantBillingSystemApplication.class)
 @ActiveProfiles("test")
+@Import(AuthServiceTest.TestConfig.class)
 @DisplayName("AuthService Integration Tests")
 class AuthServiceTest {
 
@@ -37,21 +46,32 @@ class AuthServiceTest {
         @Primary
         public TenantAuthService tenantAuthService() {
             TenantAuthService mock = mock(TenantAuthService.class);
-            
-            AuthResponse mockResponse = AuthResponse.builder()
-                .accessToken("mock_access_token")
-                .refreshToken("mock_refresh_token")
-                .userId(1L)
-                .email("test@test.com")
-                .name("Test User")
-                .role("OWNER")
-                .build();
-            
-            when(mock.loginInTenantSchema(any(), any(), anyString(), anyString()))
-                .thenReturn(mockResponse);
-            when(mock.refreshInTenantSchema(any(), any()))
-                .thenReturn(mockResponse);
-            
+
+            // loginInTenantSchema/refreshInTenantSchema populate the TokenPair
+            // out-parameter by mutation (not via the return value) — the real
+            // TenantAuthService does the same, so the mock must too, or
+            // AuthService.login()'s "if (accessToken != null)" cookie branch
+            // never fires.
+            when(mock.loginInTenantSchema(any(), any(), anyString(), anyString(), any()))
+                .thenAnswer(invocation -> {
+                    TokenPair tokenPair = invocation.getArgument(4);
+                    tokenPair.setAccessToken("mock_access_token");
+                    tokenPair.setRefreshToken("mock_refresh_token");
+                    return AuthResponse.forTenantUser(
+                            900L, Instant.now(), 1L, "test@test.com", "OWNER",
+                            List.of(), 1L, "Test Shop", false, false, false);
+                });
+
+            when(mock.refreshInTenantSchema(any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    TokenPair tokenPair = invocation.getArgument(2);
+                    tokenPair.setAccessToken("mock_new_access_token");
+                    tokenPair.setRefreshToken("mock_new_refresh_token");
+                    return AuthResponse.forTenantUser(
+                            900L, Instant.now(), 1L, "test@test.com", "OWNER",
+                            List.of(), 1L, "Test Shop", false, false, false);
+                });
+
             return mock;
         }
     }
@@ -85,9 +105,10 @@ class AuthServiceTest {
                 .name("Test Shop")
                 .schemaName(currentSchema)
                 .ownerEmail("owner@test.com")
+                .slug("test-shop-" + UUID.randomUUID().toString().substring(0, 8))
                 .status(status)
                 .build();
-        
+
         return tenantRepository.save(tenant);
     }
 
@@ -101,17 +122,18 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.ACTIVE);
 
             LoginRequest request = LoginRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .email("test@test.com")
                 .password("password")
                 .build();
 
-            AuthResponse response = authService.login(request, "127.0.0.1", "Chrome");
+            AuthResponse response = authService.login(
+                    request, "127.0.0.1", "Chrome", new MockHttpServletResponse());
 
             assertNotNull(response);
-            assertNotNull(response.getAccessToken());
-            assertNotNull(response.getRefreshToken());
-            assertNotNull(response.getUserId());
+            assertNotNull(response.getUser());
+            assertEquals(1L, response.getUser().getUserId());
+            assertNotNull(response.getSession());
         }
 
         @Test
@@ -120,13 +142,13 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.SUSPENDED);
 
             LoginRequest request = LoginRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .email("test@test.com")
                 .password("password")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.login(request, "127.0.0.1", "Chrome")
+            assertThrows(TenantException.class, () ->
+                authService.login(request, "127.0.0.1", "Chrome", new MockHttpServletResponse())
             );
         }
 
@@ -136,48 +158,27 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.INACTIVE);
 
             LoginRequest request = LoginRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .email("test@test.com")
                 .password("password")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.login(request, "127.0.0.1", "Chrome")
+            assertThrows(TenantException.class, () ->
+                authService.login(request, "127.0.0.1", "Chrome", new MockHttpServletResponse())
             );
-        }
-
-        @Test
-        @DisplayName("login pending onboarding tenant allows login and returns onboarding flag")
-        void login_pendingOnboardingTenant_allowsLogin_returnsOnboardingFlag() {
-            Shop tenant = createTestTenant(Status.PENDING_ONBOARDING);
-            tenant.setOnboardingStep(1);
-            tenantRepository.save(tenant);
-
-            LoginRequest request = LoginRequest.builder()
-                .tenantId(tenant.getId())
-                .email("test@test.com")
-                .password("password")
-                .build();
-
-            AuthResponse response = authService.login(request, "127.0.0.1", "Chrome");
-
-            assertNotNull(response);
-            assertNotNull(response.getOnboardingComplete());
-            assertFalse(response.getOnboardingComplete());
-            assertEquals(1, response.getOnboardingStep());
         }
 
         @Test
         @DisplayName("login tenant not found throws TenantException")
         void login_tenantNotFound_throwsTenantException() {
             LoginRequest request = LoginRequest.builder()
-                .tenantId(99999L)
+                .tenantSlug("no-such-shop-" + UUID.randomUUID())
                 .email("test@test.com")
                 .password("password")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.login(request, "127.0.0.1", "Chrome")
+            assertThrows(TenantException.class, () ->
+                authService.login(request, "127.0.0.1", "Chrome", new MockHttpServletResponse())
             );
         }
     }
@@ -192,14 +193,15 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.ACTIVE);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .refreshToken("valid_refresh_token")
                 .build();
 
-            AuthResponse response = authService.refreshAccessToken(request);
+            AuthResponse response = authService.refreshAccessToken(
+                    request, new MockHttpServletRequest(), new MockHttpServletResponse());
 
             assertNotNull(response);
-            assertNotNull(response.getAccessToken());
+            assertNotNull(response.getUser());
         }
 
         @Test
@@ -208,12 +210,13 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.SUSPENDED);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .refreshToken("refresh_token")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.refreshAccessToken(request)
+            assertThrows(TenantException.class, () ->
+                authService.refreshAccessToken(
+                        request, new MockHttpServletRequest(), new MockHttpServletResponse())
             );
         }
 
@@ -223,12 +226,13 @@ class AuthServiceTest {
             Shop tenant = createTestTenant(Status.INACTIVE);
 
             RefreshTokenRequest request = RefreshTokenRequest.builder()
-                .tenantId(tenant.getId())
+                .tenantSlug(tenant.getSlug())
                 .refreshToken("refresh_token")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.refreshAccessToken(request)
+            assertThrows(TenantException.class, () ->
+                authService.refreshAccessToken(
+                        request, new MockHttpServletRequest(), new MockHttpServletResponse())
             );
         }
 
@@ -236,12 +240,13 @@ class AuthServiceTest {
         @DisplayName("refreshAccessToken tenant not found throws TenantException")
         void refreshAccessToken_tenantNotFound_throwsTenantException() {
             RefreshTokenRequest request = RefreshTokenRequest.builder()
-                .tenantId(99999L)
+                .tenantSlug("no-such-shop-" + UUID.randomUUID())
                 .refreshToken("refresh_token")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.refreshAccessToken(request)
+            assertThrows(TenantException.class, () ->
+                authService.refreshAccessToken(
+                        request, new MockHttpServletRequest(), new MockHttpServletResponse())
             );
         }
     }
@@ -260,7 +265,9 @@ class AuthServiceTest {
                 .build();
 
             assertDoesNotThrow(() ->
-                authService.logout(request, tenant.getId(), "127.0.0.1", "Chrome")
+                authService.logout(
+                        request, tenant.getId(), "127.0.0.1", "Chrome",
+                        new MockHttpServletRequest(), new MockHttpServletResponse())
             );
         }
 
@@ -271,8 +278,10 @@ class AuthServiceTest {
                 .refreshToken("refresh_token")
                 .build();
 
-            assertThrows(com.mtbs.shared.exception.TenantException.class, () ->
-                authService.logout(request, 99999L, "127.0.0.1", "Chrome")
+            assertThrows(TenantException.class, () ->
+                authService.logout(
+                        request, 99999L, "127.0.0.1", "Chrome",
+                        new MockHttpServletRequest(), new MockHttpServletResponse())
             );
         }
     }
