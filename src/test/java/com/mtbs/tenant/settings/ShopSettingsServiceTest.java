@@ -124,5 +124,31 @@ class ShopSettingsServiceTest {
                 shopSettingsService.updateSettings(request)
             );
         }
+
+        @Test
+        @DisplayName("updateSettings sets upiId and watermarkText (printing fields)")
+        void updateSettings_printingFields_persisted() {
+            UpdateShopSettingsRequest request = UpdateShopSettingsRequest.builder()
+                .upiId("shop@upi")
+                .watermarkText("DRAFT")
+                .build();
+
+            ShopSettingsResponse response = shopSettingsService.updateSettings(request);
+
+            assertEquals("shop@upi", response.getUpiId());
+            assertEquals("DRAFT", response.getWatermarkText());
+        }
+
+        @Test
+        @DisplayName("updateSettings unknown signatureAttachmentId throws")
+        void updateSettings_unknownSignatureAttachmentId_throws() {
+            UpdateShopSettingsRequest request = UpdateShopSettingsRequest.builder()
+                .signatureAttachmentId(999999L)
+                .build();
+
+            assertThrows(ResourceException.class, () ->
+                shopSettingsService.updateSettings(request)
+            );
+        }
     }
 }

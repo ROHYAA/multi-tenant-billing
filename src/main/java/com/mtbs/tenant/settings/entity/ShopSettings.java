@@ -70,6 +70,18 @@ public class ShopSettings extends AuditableEntity {
     @Column(length = 255)
     private String website;
 
+    /** UPI VPA (e.g. "shopname@upi") — encoded into the dynamic UPI QR when set. */
+    @Column(name = "upi_id", length = 100)
+    private String upiId;
+
+    /** References attachment.Attachment.id — falls back to a text signature line when null. */
+    @Column(name = "signature_attachment_id")
+    private Long signatureAttachmentId;
+
+    /** Diagonal watermark text (e.g. "COPY", "DRAFT") — no watermark drawn when null/blank. */
+    @Column(name = "watermark_text", length = 50)
+    private String watermarkText;
+
     // ── Invoice & Regional Settings ──────────────────────────────────────────
 
     @Column(nullable = false, length = 3)

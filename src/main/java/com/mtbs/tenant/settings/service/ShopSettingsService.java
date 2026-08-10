@@ -74,6 +74,12 @@ public class ShopSettingsService {
         if (r.getGstin()       != null) settings.setGstin(r.getGstin());
         if (r.getPan()         != null) settings.setPan(r.getPan());
         if (r.getWebsite()     != null) settings.setWebsite(r.getWebsite());
+        if (r.getUpiId()       != null) settings.setUpiId(r.getUpiId());
+        if (r.getWatermarkText() != null) settings.setWatermarkText(r.getWatermarkText());
+        if (r.getSignatureAttachmentId() != null) {
+            attachmentService.getById(r.getSignatureAttachmentId()); // throws if not found
+            settings.setSignatureAttachmentId(r.getSignatureAttachmentId());
+        }
     }
 
     private void applyInvoiceAndRegionalSettings(ShopSettings settings, UpdateShopSettingsRequest r) {
@@ -136,6 +142,9 @@ public class ShopSettingsService {
         String logoUrl = settings.getLogoAttachmentId() != null
                 ? attachmentService.getById(settings.getLogoAttachmentId()).getUrl()
                 : null;
+        String signatureUrl = settings.getSignatureAttachmentId() != null
+                ? attachmentService.getById(settings.getSignatureAttachmentId()).getUrl()
+                : null;
 
         return ShopSettingsResponse.builder()
                 .businessName(settings.getBusinessName())
@@ -151,6 +160,10 @@ public class ShopSettingsService {
                 .gstin(settings.getGstin())
                 .pan(settings.getPan())
                 .website(settings.getWebsite())
+                .upiId(settings.getUpiId())
+                .signatureAttachmentId(settings.getSignatureAttachmentId())
+                .signatureUrl(signatureUrl)
+                .watermarkText(settings.getWatermarkText())
                 .currency(settings.getCurrency())
                 .currencySymbol(settings.getCurrencySymbol())
                 .decimalPrecision(settings.getDecimalPrecision())

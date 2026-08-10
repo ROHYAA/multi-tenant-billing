@@ -26,6 +26,11 @@ public class ShopSettingsResponse {
     private String gstin;
     private String pan;
     private String website;
+    private String upiId;
+    private Long signatureAttachmentId;
+    /** Computed from signatureAttachmentId via AttachmentService — null if no signature image uploaded. */
+    private String signatureUrl;
+    private String watermarkText;
 
     // Invoice & Regional Settings
     private String currency;

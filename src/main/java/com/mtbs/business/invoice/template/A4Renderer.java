@@ -6,23 +6,27 @@ import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.CompressionConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.WriterProperties;
+import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.tenant.settings.entity.ShopSettings;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -33,20 +37,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Template 1 — "Simple Cash Memo". This is today's BillPdfService layout,
- * mechanically ported behind the BillTemplateRenderer interface (output is
- * unchanged from prior behavior by default), extended to read ShopSettings
- * for the business header, GST line, customer-address/amount-in-words/
- * signature toggles, and footer text.
+ * A4 paper renderer for the "Simple Cash Memo" style — full-page tax-invoice
+ * layout with a colored header bar, items table, and totals block. Registry
+ * key is built by BillPdfService as "{billTemplate.code}:A4".
  *
- * showLogo and showQrCode are stored in ShopSettings but NOT yet drawn here
- * — embedding an uploaded image needs AttachmentService wiring, deliberately
- * scoped out of this pass (see Phase 2.1 plan, "explicitly deferred").
+ * This is Phase 2.1's CashMemoV1Renderer, renamed and extended with logo/
+ * QR/watermark/copy-label/signature-image rendering and ShopSettings-driven
+ * margin/font-size.
  */
 @Component
-public class CashMemoV1Renderer implements BillTemplateRenderer {
-
-    static final String CODE = "CASH_MEMO_V1";
+@RequiredArgsConstructor
+public class A4Renderer implements BillTemplateRenderer {
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC);
@@ -56,57 +57,72 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
     private static final DeviceRgb BORDER_COLOR = new DeviceRgb(226, 232, 240);
     private static final DeviceRgb MUTED_TEXT   = new DeviceRgb(100, 116, 139);
 
+    private final BillRenderSupport support;
+
     @Override
     public String code() {
-        return CODE;
+        return "CASH_MEMO_V1:A4";
     }
 
     @Override
-    public byte[] render(Bill invoice, List<BillItem> items, Customer customer, ShopSettings settings) {
+    public byte[] render(Bill invoice, List<BillItem> items, Customer customer, ShopSettings settings, BillRenderOptions options) {
         try {
-            return buildPdf(invoice, items, customer, settings);
+            return buildPdf(invoice, items, customer, settings, options);
         } catch (Exception e) {
             throw ResourceException.invalid("PDF generation failed: " + e.getMessage());
         }
     }
 
-    private byte[] buildPdf(Bill invoice, List<BillItem> items, Customer customer, ShopSettings settings) throws Exception {
+    private byte[] buildPdf(Bill invoice, List<BillItem> items, Customer customer,
+                             ShopSettings settings, BillRenderOptions options) throws Exception {
+        float baseFontSize = settings.getFontSize() != null ? settings.getFontSize() : 10;
+        float marginPt = mmToPt(settings.getMargin() != null ? settings.getMargin() : 5);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer   = new PdfWriter(baos);
+        WriterProperties writerProperties = new WriterProperties()
+                .setCompressionLevel(CompressionConstants.BEST_COMPRESSION)
+                .setFullCompressionMode(true);
+        PdfWriter writer   = new PdfWriter(baos, writerProperties);
         PdfDocument pdfDoc = new PdfDocument(writer);
         Document document  = new Document(pdfDoc, PageSize.A4);
-        document.setMargins(40, 50, 40, 50);
+        document.setMargins(marginPt + 35, marginPt + 45, marginPt + 35, marginPt + 45);
 
         PdfFont regular = PdfFontFactory.createFont("Helvetica");
         PdfFont bold    = PdfFontFactory.createFont("Helvetica-Bold");
 
-        addBusinessHeader(document, settings, bold, regular);
-        addHeader(document, invoice, bold, regular);
-        addBillingSection(document, invoice, customer, settings, bold, regular);
-        addItemsTable(document, items, bold, regular);
-        addTotals(document, invoice, settings, bold, regular);
+        addBusinessHeader(document, settings, bold, regular, baseFontSize);
+        addHeader(document, invoice, options, bold, regular, baseFontSize);
+        addBillingSection(document, invoice, customer, settings, bold, regular, baseFontSize);
+        addItemsTable(document, items, bold, regular, baseFontSize);
+        addTotals(document, invoice, settings, bold, regular, baseFontSize);
 
         if (invoice.getNotes() != null && !invoice.getNotes().isBlank()) {
-            addNotes(document, invoice.getNotes(), bold, regular);
+            addNotes(document, invoice.getNotes(), bold, regular, baseFontSize);
         }
 
-        if (Boolean.TRUE.equals(settings.getShowSignature())) {
-            addSignatureLine(document, regular);
-        }
+        addQrCode(document, invoice, settings, pdfDoc, regular, baseFontSize);
+        addSignature(document, settings, regular, baseFontSize);
+        addFooter(document, invoice, settings, regular, bold, baseFontSize);
 
-        addFooter(document, invoice, settings, regular, bold);
+        support.drawWatermark(pdfDoc, settings);
 
         document.close();
         return baos.toByteArray();
     }
 
-    private void addBusinessHeader(Document document, ShopSettings settings, PdfFont bold, PdfFont regular) {
+    private void addBusinessHeader(Document document, ShopSettings settings, PdfFont bold, PdfFont regular, float baseFontSize) {
+        Image logo = support.loadLogo(settings);
+        if (logo != null) {
+            logo.setMaxWidth(120).setMaxHeight(60);
+            document.add(logo);
+        }
+
         if (settings.getBusinessName() == null) {
-            return; // Nothing configured yet — skip rather than print an empty block.
+            return;
         }
 
         document.add(new Paragraph(settings.getBusinessName())
-                .setFont(bold).setFontSize(16).setMarginBottom(2));
+                .setFont(bold).setFontSize(baseFontSize * 1.6f).setMarginBottom(2));
 
         StringBuilder details = new StringBuilder();
         if (settings.getAddress() != null) details.append(settings.getAddress());
@@ -117,7 +133,7 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         }
         if (!details.isEmpty()) {
             document.add(new Paragraph(details.toString())
-                    .setFont(regular).setFontSize(9).setFontColor(MUTED_TEXT).setMarginBottom(1));
+                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(1));
         }
 
         StringBuilder contact = new StringBuilder();
@@ -132,25 +148,31 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         }
         if (!contact.isEmpty()) {
             document.add(new Paragraph(contact.toString())
-                    .setFont(regular).setFontSize(9).setFontColor(MUTED_TEXT).setMarginBottom(12));
+                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(12));
         }
     }
 
-    private void addHeader(Document document, Bill invoice, PdfFont bold, PdfFont regular) {
+    private void addHeader(Document document, Bill invoice, BillRenderOptions options, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table headerTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginBottom(20);
 
+        String copyLabel = support.copyLabelText(options);
         Cell titleCell = new Cell()
                 .add(new Paragraph("TAX INVOICE")
-                        .setFont(bold).setFontSize(22)
+                        .setFont(bold).setFontSize(baseFontSize * 2.2f)
                         .setFontColor(ColorConstants.WHITE))
                 .add(new Paragraph(invoice.getInvoiceNumber())
-                        .setFont(regular).setFontSize(11)
+                        .setFont(regular).setFontSize(baseFontSize * 1.1f)
                         .setFontColor(new DeviceRgb(186, 230, 253)))
                 .setBackgroundColor(HEADER_BG)
                 .setBorder(Border.NO_BORDER)
                 .setPadding(16);
+        if (copyLabel != null) {
+            titleCell.add(new Paragraph(copyLabel)
+                    .setFont(bold).setFontSize(baseFontSize * 0.8f)
+                    .setFontColor(ColorConstants.WHITE).setMarginTop(4));
+        }
         headerTable.addCell(titleCell);
 
         String invoiceDate = formatInstant(invoice.getCreatedAt());
@@ -159,16 +181,16 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
 
         Cell metaCell = new Cell()
                 .add(new Paragraph("Invoice date")
-                        .setFont(regular).setFontSize(9)
+                        .setFont(regular).setFontSize(baseFontSize * 0.9f)
                         .setFontColor(MUTED_TEXT))
                 .add(new Paragraph(invoiceDate)
-                        .setFont(bold).setFontSize(11)
+                        .setFont(bold).setFontSize(baseFontSize * 1.1f)
                         .setMarginBottom(8))
                 .add(new Paragraph("Due date")
-                        .setFont(regular).setFontSize(9)
+                        .setFont(regular).setFontSize(baseFontSize * 0.9f)
                         .setFontColor(MUTED_TEXT))
                 .add(new Paragraph(dueDate)
-                        .setFont(bold).setFontSize(11))
+                        .setFont(bold).setFontSize(baseFontSize * 1.1f))
                 .setBackgroundColor(HEADER_BG)
                 .setBorder(Border.NO_BORDER)
                 .setPadding(16)
@@ -179,7 +201,7 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
     }
 
     private void addBillingSection(Document document, Bill invoice, Customer customer,
-                                    ShopSettings settings, PdfFont bold, PdfFont regular) {
+                                    ShopSettings settings, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table billingTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginBottom(20);
@@ -194,21 +216,21 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         if (customer.getGstin() != null) billTo.append("GSTIN: ").append(customer.getGstin());
 
         Cell billToCell = new Cell()
-                .add(new Paragraph("BILL TO").setFont(bold).setFontSize(9)
+                .add(new Paragraph("BILL TO").setFont(bold).setFontSize(baseFontSize * 0.9f)
                         .setFontColor(MUTED_TEXT).setMarginBottom(4))
                 .add(new Paragraph(billTo.toString())
-                        .setFont(regular).setFontSize(10))
+                        .setFont(regular).setFontSize(baseFontSize))
                 .setBorder(Border.NO_BORDER)
                 .setPaddingRight(12);
         billingTable.addCell(billToCell);
 
         Cell statusCell = new Cell()
-                .add(new Paragraph("STATUS").setFont(bold).setFontSize(9)
+                .add(new Paragraph("STATUS").setFont(bold).setFontSize(baseFontSize * 0.9f)
                         .setFontColor(MUTED_TEXT).setMarginBottom(4))
                 .add(new Paragraph(invoice.getStatus().name())
-                        .setFont(bold).setFontSize(12))
+                        .setFont(bold).setFontSize(baseFontSize * 1.2f))
                 .add(new Paragraph(invoice.getCurrency() + " " + invoice.getTotalAmount().toPlainString())
-                        .setFont(bold).setFontSize(16)
+                        .setFont(bold).setFontSize(baseFontSize * 1.6f)
                         .setFontColor(HEADER_BG)
                         .setMarginTop(8))
                 .setBorder(Border.NO_BORDER)
@@ -219,7 +241,7 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         document.add(new LineSeparator(new SolidLine(0.5f)).setMarginBottom(16));
     }
 
-    private void addItemsTable(Document document, List<BillItem> items, PdfFont bold, PdfFont regular) {
+    private void addItemsTable(Document document, List<BillItem> items, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table table = new Table(UnitValue.createPercentArray(new float[]{38, 8, 14, 8, 14, 18}))
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginBottom(16);
@@ -227,7 +249,7 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         String[] headers = {"Description", "Qty", "Unit price", "Tax %", "Tax", "Total"};
         for (String h : headers) {
             table.addHeaderCell(new Cell()
-                    .add(new Paragraph(h).setFont(bold).setFontSize(9))
+                    .add(new Paragraph(h).setFont(bold).setFontSize(baseFontSize * 0.9f))
                     .setBackgroundColor(TABLE_HEADER)
                     .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
                     .setBorderTop(Border.NO_BORDER)
@@ -237,18 +259,18 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         }
 
         for (BillItem item : items) {
-            table.addCell(itemCell(item.getDescription(), regular, TextAlignment.LEFT));
-            table.addCell(itemCell(item.getQuantity().toPlainString(), regular, TextAlignment.CENTER));
-            table.addCell(itemCell(fmt(item.getUnitPrice()), regular, TextAlignment.RIGHT));
-            table.addCell(itemCell(item.getTaxPercentage().toPlainString() + "%", regular, TextAlignment.CENTER));
-            table.addCell(itemCell(fmt(item.getTaxAmount()), regular, TextAlignment.RIGHT));
-            table.addCell(itemCell(fmt(item.getTotal()), regular, TextAlignment.RIGHT));
+            table.addCell(itemCell(item.getDescription(), regular, TextAlignment.LEFT, baseFontSize));
+            table.addCell(itemCell(item.getQuantity().toPlainString(), regular, TextAlignment.CENTER, baseFontSize));
+            table.addCell(itemCell(fmt(item.getUnitPrice()), regular, TextAlignment.RIGHT, baseFontSize));
+            table.addCell(itemCell(item.getTaxPercentage().toPlainString() + "%", regular, TextAlignment.CENTER, baseFontSize));
+            table.addCell(itemCell(fmt(item.getTaxAmount()), regular, TextAlignment.RIGHT, baseFontSize));
+            table.addCell(itemCell(fmt(item.getTotal()), regular, TextAlignment.RIGHT, baseFontSize));
         }
 
         document.add(table);
     }
 
-    private void addTotals(Document document, Bill invoice, ShopSettings settings, PdfFont bold, PdfFont regular) {
+    private void addTotals(Document document, Bill invoice, ShopSettings settings, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginBottom(20);
@@ -258,8 +280,8 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         Table innerTotals = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        addTotalRow(innerTotals, "Subtotal", fmt(invoice.getSubtotal()), regular, false);
-        addTotalRow(innerTotals, "Tax",      fmt(invoice.getTaxAmount()), regular, false);
+        addTotalRow(innerTotals, "Subtotal", fmt(invoice.getSubtotal()), regular, false, baseFontSize);
+        addTotalRow(innerTotals, "Tax",      fmt(invoice.getTaxAmount()), regular, false, baseFontSize);
 
         innerTotals.addCell(new Cell(1, 2)
                 .setBorderTop(new SolidBorder(BORDER_COLOR, 0.5f))
@@ -271,49 +293,80 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
         addTotalRow(innerTotals,
                 "Total (" + invoice.getCurrency() + ")",
                 fmt(invoice.getTotalAmount()),
-                bold, true);
+                bold, true, baseFontSize);
 
         totalsTable.addCell(new Cell().add(innerTotals).setBorder(Border.NO_BORDER));
         document.add(totalsTable);
 
         if (Boolean.TRUE.equals(settings.getShowAmountInWords())) {
-            String words = AmountToWordsConverter.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            String words = support.amountInWords(invoice.getTotalAmount(), invoice.getCurrency());
             document.add(new Paragraph("Amount in words: " + words)
-                    .setFont(regular).setFontSize(9).setFontColor(MUTED_TEXT).setMarginBottom(16));
+                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(16));
         }
     }
 
-    private void addNotes(Document document, String notes, PdfFont bold, PdfFont regular) {
+    private void addQrCode(Document document, Bill invoice, ShopSettings settings, PdfDocument pdfDoc, PdfFont regular, float baseFontSize) {
+        Image qr = support.generateUpiQrCode(invoice, settings, pdfDoc);
+        if (qr == null) {
+            return;
+        }
+        qr.setMaxWidth(70).setMaxHeight(70);
+        Table qrTable = new Table(UnitValue.createPercentArray(new float[]{85, 15}))
+                .setWidth(UnitValue.createPercentValue(100))
+                .setMarginBottom(10);
+        qrTable.addCell(new Cell().setBorder(Border.NO_BORDER));
+        Cell qrCell = new Cell()
+                .add(qr)
+                .add(new Paragraph("Scan to pay").setFont(regular).setFontSize(baseFontSize * 0.75f)
+                        .setFontColor(MUTED_TEXT).setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER)
+                .setTextAlignment(TextAlignment.CENTER);
+        qrTable.addCell(qrCell);
+        document.add(qrTable);
+    }
+
+    private void addNotes(Document document, String notes, PdfFont bold, PdfFont regular, float baseFontSize) {
         document.add(new Paragraph("Notes")
-                .setFont(bold).setFontSize(10).setFontColor(MUTED_TEXT).setMarginBottom(4));
+                .setFont(bold).setFontSize(baseFontSize).setFontColor(MUTED_TEXT).setMarginBottom(4));
         document.add(new Paragraph(notes)
-                .setFont(regular).setFontSize(10)
+                .setFont(regular).setFontSize(baseFontSize)
                 .setBorderLeft(new SolidBorder(BORDER_COLOR, 3))
                 .setPaddingLeft(10)
                 .setMarginBottom(20));
     }
 
-    private void addSignatureLine(Document document, PdfFont regular) {
-        document.add(new Paragraph("\n\n_______________________")
-                .setFont(regular).setFontSize(10)
-                .setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
+    private void addSignature(Document document, ShopSettings settings, PdfFont regular, float baseFontSize) {
+        if (!Boolean.TRUE.equals(settings.getShowSignature())) {
+            return;
+        }
+
+        Image signatureImage = support.loadSignatureImage(settings);
+        if (signatureImage != null) {
+            signatureImage.setMaxWidth(120).setMaxHeight(50);
+            signatureImage.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.RIGHT);
+            document.add(signatureImage);
+        } else {
+            document.add(new Paragraph("\n\n_______________________")
+                    .setFont(regular).setFontSize(baseFontSize)
+                    .setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
+        }
         document.add(new Paragraph("Authorized Signatory")
-                .setFont(regular).setFontSize(9).setFontColor(MUTED_TEXT)
+                .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT)
                 .setTextAlignment(TextAlignment.RIGHT));
     }
 
-    private void addFooter(Document document, Bill invoice, ShopSettings settings, PdfFont regular, PdfFont bold) {
+    private void addFooter(Document document, Bill invoice, ShopSettings settings, PdfFont regular, PdfFont bold, float baseFontSize) {
         document.add(new LineSeparator(new SolidLine(0.5f)).setMarginTop(16).setMarginBottom(10));
 
         if (settings.getTermsAndConditions() != null && !settings.getTermsAndConditions().isBlank()) {
-            document.add(new Paragraph("Terms & Conditions").setFont(bold).setFontSize(9).setFontColor(MUTED_TEXT));
+            document.add(new Paragraph("Terms & Conditions").setFont(bold).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT));
             document.add(new Paragraph(settings.getTermsAndConditions())
-                    .setFont(regular).setFontSize(8).setFontColor(MUTED_TEXT).setMarginBottom(6));
+                    .setFont(regular).setFontSize(baseFontSize * 0.8f).setFontColor(MUTED_TEXT).setMarginBottom(6));
         }
 
         if (settings.getWarrantyText() != null && !settings.getWarrantyText().isBlank()) {
             document.add(new Paragraph(settings.getWarrantyText())
-                    .setFont(regular).setFontSize(8).setFontColor(MUTED_TEXT).setMarginBottom(6));
+                    .setFont(regular).setFontSize(baseFontSize * 0.8f).setFontColor(MUTED_TEXT).setMarginBottom(6));
         }
 
         String dueText = invoice.getDueDate() != null
@@ -324,14 +377,14 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
                 : "Thank you for your business.";
 
         document.add(new Paragraph(dueText + closing)
-                .setFont(regular).setFontSize(9)
+                .setFont(regular).setFontSize(baseFontSize * 0.9f)
                 .setFontColor(MUTED_TEXT)
                 .setTextAlignment(TextAlignment.CENTER));
     }
 
-    private Cell itemCell(String text, PdfFont font, TextAlignment align) {
+    private Cell itemCell(String text, PdfFont font, TextAlignment align, float baseFontSize) {
         return new Cell()
-                .add(new Paragraph(text).setFont(font).setFontSize(9))
+                .add(new Paragraph(text).setFont(font).setFontSize(baseFontSize * 0.9f))
                 .setBorderTop(Border.NO_BORDER)
                 .setBorderLeft(Border.NO_BORDER)
                 .setBorderRight(Border.NO_BORDER)
@@ -340,9 +393,9 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
                 .setTextAlignment(align);
     }
 
-    private void addTotalRow(Table table, String label, String value, PdfFont font, boolean highlight) {
+    private void addTotalRow(Table table, String label, String value, PdfFont font, boolean highlight, float baseFontSize) {
         Color textColor = highlight ? HEADER_BG : ColorConstants.BLACK;
-        float fontSize = highlight ? 12f : 10f;
+        float fontSize = highlight ? baseFontSize * 1.2f : baseFontSize;
 
         table.addCell(new Cell()
                 .add(new Paragraph(label).setFont(font).setFontSize(fontSize).setFontColor(textColor))
@@ -363,5 +416,9 @@ public class CashMemoV1Renderer implements BillTemplateRenderer {
 
     private String nullToEmpty(String value) {
         return value != null ? value : "";
+    }
+
+    private float mmToPt(int mm) {
+        return mm * 72f / 25.4f;
     }
 }

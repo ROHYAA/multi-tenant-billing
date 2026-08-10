@@ -182,6 +182,13 @@
             <version>${itext.version}</version>
         </dependency>
 
+        <!-- QR code generation (BarcodeQRCode) for the UPI-pay QR on printed bills -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>barcodes</artifactId>
+            <version>${itext.version}</version>
+        </dependency>
+
         <!-- ══════════════════════════════════════════════════════════ -->
         <!-- EMAIL                                                       -->
         <!-- ══════════════════════════════════════════════════════════ -->

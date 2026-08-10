@@ -3,6 +3,7 @@ package com.mtbs.business.invoice.controller;
 import com.mtbs.business.invoice.dto.AddBillItemRequest;
 import com.mtbs.business.invoice.dto.BillResponse;
 import com.mtbs.business.invoice.dto.CreateBillRequest;
+import com.mtbs.business.invoice.template.CopyType;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
@@ -185,20 +186,55 @@ public class BillController {
     @GetMapping("/{id}/download")
     @Operation(
             summary = "Download invoice as PDF",
-            description = "Generates and streams the invoice as a PDF file. " +
+            description = "Generates and streams the invoice as a PDF file, using whichever paper size " +
+                    "and bill template the shop has configured in Shop Settings. " +
                     "Response content-type is application/pdf. " +
                     "Content-Disposition is set to attachment for browser download. " +
-                    "Filename: {invoiceNumber}.pdf (e.g. BINV-1-202603-0001.pdf). " +
+                    "Filename: {invoiceNumber}.pdf. " +
+                    "Optional 'copyType' prints an ORIGINAL/DUPLICATE/TRIPLICATE label on the bill. " +
                     "Requires BILLING_MANAGE permission."
     )
-    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadPdf(
+            @PathVariable Long id,
+            @Parameter(description = "Optional copy label: ORIGINAL, DUPLICATE, or TRIPLICATE")
+            @RequestParam(required = false) CopyType copyType) {
+
         BillResponse invoice = invoiceService.getById(id);
-        byte[] pdf = invoiceService.generatePdf(id);
+        byte[] pdf = invoiceService.generatePdf(id, copyType);
 
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + invoice.getInvoiceNumber() + ".pdf\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH,
+                        String.valueOf(pdf.length))
+                .body(pdf);
+    }
+
+    // ── GET /api/business-invoices/{id}/preview ───────────────────────────────
+
+    @GetMapping("/{id}/preview")
+    @Operation(
+            summary = "Preview invoice as PDF (inline)",
+            description = "Same PDF bytes as /download, but with Content-Disposition: inline so a " +
+                    "browser (or an embedded PDF viewer, once the frontend exists) renders it directly " +
+                    "instead of forcing a download — this is the print-preview endpoint. " +
+                    "Works on invoices in any status, including DRAFT, so a shop can check the layout " +
+                    "before finalizing. " +
+                    "Requires BILLING_MANAGE permission."
+    )
+    public ResponseEntity<byte[]> previewPdf(
+            @PathVariable Long id,
+            @Parameter(description = "Optional copy label: ORIGINAL, DUPLICATE, or TRIPLICATE")
+            @RequestParam(required = false) CopyType copyType) {
+
+        BillResponse invoice = invoiceService.getById(id);
+        byte[] pdf = invoiceService.generatePdf(id, copyType);
+
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + invoice.getInvoiceNumber() + ".pdf\"")
                 .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH,
                         String.valueOf(pdf.length))
                 .body(pdf);

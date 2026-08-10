@@ -8,16 +8,19 @@ import com.mtbs.tenant.settings.entity.ShopSettings;
 import java.util.List;
 
 /**
- * One implementation per bill layout. Each @Component implementation
- * declares the bill_templates.code it renders; BillTemplateRendererRegistry
- * indexes them at startup. Adding Template 2/3 later means writing a new
- * class + one catalog row (V10 migration) — no changes to BillService,
- * BillController, or this interface.
+ * One implementation per (template style, paper size) pair. Each
+ * @Component implementation declares the registry key it renders;
+ * BillTemplateRendererRegistry indexes them at startup. BillPdfService
+ * builds the lookup key from bill_templates.code + ShopSettings.paperSize
+ * (see BillPdfService for exactly how) — adding a new paper size for the
+ * existing style, or a whole new style with its own paper-size variants,
+ * means writing new classes + (for a new style) one catalog row, no
+ * changes to BillService, BillController, or this interface.
  */
 public interface BillTemplateRenderer {
 
-    /** Must match a bill_templates.code value (see V10__create_bill_templates.sql). */
+    /** Registry key this renderer serves — see BillPdfService for how it's built. */
     String code();
 
-    byte[] render(Bill invoice, List<BillItem> items, Customer customer, ShopSettings settings);
+    byte[] render(Bill invoice, List<BillItem> items, Customer customer, ShopSettings settings, BillRenderOptions options);
 }

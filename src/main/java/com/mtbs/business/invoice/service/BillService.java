@@ -11,6 +11,8 @@ import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.business.invoice.mapper.BillMapper;
 import com.mtbs.business.invoice.mapper.BillItemMapper;
+import com.mtbs.business.invoice.template.BillRenderOptions;
+import com.mtbs.business.invoice.template.CopyType;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.product.entity.Product;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
@@ -225,7 +227,7 @@ public class BillService {
         // Generate PDF bytes — passed to NotificationService via event extras
         byte[] pdfBytes = null;
         try {
-            pdfBytes = pdfService.generatePdf(invoiceId);
+            pdfBytes = pdfService.generatePdf(invoiceId, BillRenderOptions.NONE);
         } catch (Exception e) {
             log.warn("PDF generation failed during send — sending without attachment: {}", e.getMessage());
         }
@@ -507,12 +509,16 @@ public class BillService {
     /**
      * Generates a PDF byte array for a business invoice.
      * Delegates to BillPdfService which handles all iText layout.
-     * Called by GET /api/business-invoices/{id}/download.
+     * Called by GET /api/business-invoices/{id}/download and /preview.
+     *
+     * @param copyType which physical copy label to print (ORIGINAL/DUPLICATE/
+     *                 TRIPLICATE), or null for no copy label — varies per
+     *                 print request, not a standing ShopSettings preference.
      */
     @Transactional(readOnly = true)
-    public byte[] generatePdf(Long invoiceId) {
+    public byte[] generatePdf(Long invoiceId, CopyType copyType) {
         // Validate invoice exists before handing off to PDF service
         findOrThrow(invoiceId);
-        return pdfService.generatePdf(invoiceId);
+        return pdfService.generatePdf(invoiceId, new BillRenderOptions(copyType));
     }
 }

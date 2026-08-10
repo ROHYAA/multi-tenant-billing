@@ -56,6 +56,14 @@ public class UpdateShopSettingsRequest {
     @Size(max = 255)
     private String website;
 
+    @Pattern(regexp = "^[\\w.\\-]{2,49}@[\\w]{2,49}$", message = "Invalid UPI ID (expected format: name@bank)")
+    private String upiId;
+
+    private Long signatureAttachmentId;
+
+    @Size(max = 50)
+    private String watermarkText;
+
     // ── Invoice & Regional Settings ──────────────────────────────────────────
 
     @Size(min = 3, max = 3, message = "Currency must be a 3-character ISO code")

@@ -6,6 +6,7 @@ import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.business.invoice.repository.BillItemRepository;
 import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.business.invoice.template.BillRenderOptions;
 import com.mtbs.business.invoice.template.BillTemplateRenderer;
 import com.mtbs.business.invoice.template.BillTemplateRendererRegistry;
 import com.mtbs.shared.exception.ResourceException;
@@ -22,8 +23,15 @@ import java.util.List;
 
 /**
  * Orchestration only — fetches the data, resolves which BillTemplateRenderer
- * the shop has configured (ShopSettings.billTemplateId -> BillTemplate.code),
- * and delegates the actual drawing to it. See com.mtbs.business.invoice.template.
+ * the shop has configured, and delegates the actual drawing to it. See
+ * com.mtbs.business.invoice.template.
+ *
+ * The renderer lookup key combines the shop's chosen style
+ * (BillTemplate.code, e.g. "CASH_MEMO_V1") with its chosen paper size
+ * (ShopSettings.paperSize, e.g. "A4") — "CASH_MEMO_V1:A4". This keeps
+ * bill_templates as a style catalog (extensible to a genuine second style
+ * later, each with its own A4/thermal renderers) while letting paperSize
+ * alone drive today's A4-vs-thermal choice within the one style that exists.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,7 +46,7 @@ public class BillPdfService {
     private final BillTemplateRendererRegistry rendererRegistry;
 
     @Transactional(readOnly = true)
-    public byte[] generatePdf(Long invoiceId) {
+    public byte[] generatePdf(Long invoiceId, BillRenderOptions options) {
         Bill invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> ResourceException.notFound("Bill", invoiceId));
 
@@ -46,11 +54,13 @@ public class BillPdfService {
         Customer customer = customerService.getEntityById(invoice.getCustomerId());
         ShopSettings settings = shopSettingsService.getEntity();
         BillTemplate template = billTemplateService.getEntityById(settings.getBillTemplateId());
-        BillTemplateRenderer renderer = rendererRegistry.get(template.getCode());
 
-        log.info("Generating PDF for invoice={} using template={}", invoice.getInvoiceNumber(), template.getCode());
+        String rendererKey = template.getCode() + ":" + settings.getPaperSize().name();
+        BillTemplateRenderer renderer = rendererRegistry.get(rendererKey);
 
-        byte[] pdf = renderer.render(invoice, items, customer, settings);
+        log.info("Generating PDF for invoice={} using renderer={}", invoice.getInvoiceNumber(), rendererKey);
+
+        byte[] pdf = renderer.render(invoice, items, customer, settings, options != null ? options : BillRenderOptions.NONE);
         log.info("PDF generated — invoiceNumber={}, bytes={}", invoice.getInvoiceNumber(), pdf.length);
         return pdf;
     }
