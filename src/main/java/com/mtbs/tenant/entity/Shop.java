@@ -8,8 +8,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
-@Table(name = "tenants", schema = "public")
-@SQLDelete(sql = "UPDATE public.tenants SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
+@Table(name = "shops", schema = "public")
+@SQLDelete(sql = "UPDATE public.shops SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter

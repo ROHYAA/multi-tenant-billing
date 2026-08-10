@@ -3,8 +3,6 @@ package com.mtbs.app.exception;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.exception.BaseException;
 import com.mtbs.shared.exception.ErrorCode;
-import com.mtbs.shared.exception.PaymentException;
-import com.razorpay.RazorpayException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,15 +81,6 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Missing required parameter: " + ex.getParameterName(),
                         ErrorCode.MISSING_REQUIRED_FIELD.getCode()));
-    }
-
-    @ExceptionHandler(RazorpayException.class)
-    public ResponseEntity<ApiResponse<Object>> handleRazorpayException(RazorpayException ex) {
-        log.error("Razorpay API error: {}", ex.getMessage());
-        PaymentException paymentEx = PaymentException.razorpayError("RAZORPAY_API", ex.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_GATEWAY)
-                .body(ApiResponse.error(paymentEx.getMessage(), paymentEx.getErrorCode().getCode()));
     }
 
     @ExceptionHandler(Exception.class)

@@ -39,7 +39,7 @@ public class ReportService {
 
     /**
      * Returns total revenue collected in a date range, broken down by payment method.
-     * Revenue = sum of business_payments.amount where paid_at BETWEEN from AND to.
+     * Revenue = sum of payments.amount where paid_at BETWEEN from AND to.
      * Uses actual payment dates (paid_at), not invoice dates.
      */
     @Transactional(readOnly = true)

@@ -15,7 +15,6 @@ public interface PaymentMapper {
     @Mapping(target = "method", source = "method")
     @Mapping(target = "notes", source = "notes")
     @Mapping(target = "paidAt", source = "paidAt")
-    @Mapping(target = "razorpayPaymentLinkId", source = "razorpayPaymentLinkId")
     @Mapping(target = "createdAt", source = "createdAt")
     PaymentResponse toResponse(Payment entity);
 }

@@ -117,8 +117,10 @@ public class BillService {
 
         if (!items.isEmpty()) {
             itemRepository.saveAll(items);
-            saved.setItems(items);
-            recalculateTotals(saved);
+            // Do NOT call saved.setItems(items) — items are already persisted above;
+            // assigning them to the managed, cascade-ALL "items" collection and then
+            // saving the parent would cascade-insert them a second time.
+            recalculateTotalsFromDb(saved, saved.getId());
             invoiceRepository.save(saved);
         }
 
@@ -302,23 +304,6 @@ public class BillService {
      * Called every time items are added or removed.
      * All values rounded to 2 decimal places (standard for INR).
      */
-    private void recalculateTotals(Bill invoice) {
-        BigDecimal subtotal  = BigDecimal.ZERO;
-        BigDecimal taxAmount = BigDecimal.ZERO;
-
-        for (BillItem item : invoice.getItems()) {
-            BigDecimal lineBase = item.getUnitPrice()
-                    .multiply(item.getQuantity())
-                    .setScale(2, RoundingMode.HALF_UP);
-            subtotal = subtotal.add(lineBase);
-            taxAmount = taxAmount.add(item.getTaxAmount());
-        }
-
-        invoice.setSubtotal(subtotal.setScale(2, RoundingMode.HALF_UP));
-        invoice.setTaxAmount(taxAmount.setScale(2, RoundingMode.HALF_UP));
-        invoice.setTotalAmount(subtotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP));
-    }
-
     private void recalculateTotalsFromDb(Bill invoice, Long invoiceId) {
         List<BillItem> items = itemRepository.findAllByInvoiceId(invoiceId);
 

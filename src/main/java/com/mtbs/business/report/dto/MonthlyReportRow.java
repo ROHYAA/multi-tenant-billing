@@ -23,7 +23,7 @@ public class MonthlyReportRow {
     /** Sum of totalAmount for invoices created in this month. */
     private BigDecimal invoiceTotal;
  
-    /** Sum of business_payments.amount where paid_at falls in this month. */
+    /** Sum of payments.amount where paid_at falls in this month. */
     private BigDecimal collected;
  
     /** invoiceTotal - collected (floored at zero). */

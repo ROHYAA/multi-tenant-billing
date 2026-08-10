@@ -31,6 +31,7 @@ public class PlatformAdmin {
     private String role;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @Column(name = "created_at")

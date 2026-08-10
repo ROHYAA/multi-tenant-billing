@@ -43,8 +43,8 @@ import java.util.List;
  * and only while the invoice is in DRAFT status.
  */
 @Entity
-@Table(name = "business_invoices")
-@SQLDelete(sql = "UPDATE business_invoices SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@Table(name = "bills")
+@SQLDelete(sql = "UPDATE bills SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter
@@ -107,14 +107,6 @@ public class Bill extends AuditableEntity {
     /** URL of the generated PDF. Null until the PDF is generated. */
     @Column(name = "pdf_url", length = 500)
     private String pdfUrl;
-
-    /**
-     * Razorpay Payment Link ID (plink_XXXX).
-     * Created on demand via POST /api/business-invoices/{id}/payment-link.
-     * Null until the tenant generates a payment link.
-     */
-    @Column(name = "razorpay_payment_link_id", length = 100)
-    private String razorpayPaymentLinkId;
 
     // ── Relationships ─────────────────────────────────────────────────────────
 

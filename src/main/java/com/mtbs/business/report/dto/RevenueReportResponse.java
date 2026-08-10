@@ -22,7 +22,7 @@ public class RevenueReportResponse {
     /** Period end as provided in the request. */
     private Instant to;
  
-    /** Sum of all business_payments.amount where paid_at is within the period. */
+    /** Sum of all payments.amount where paid_at is within the period. */
     private BigDecimal totalRevenue;
  
     /** Count of invoices that transitioned to PAID within the period. */

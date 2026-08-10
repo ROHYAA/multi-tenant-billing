@@ -30,7 +30,7 @@ import java.math.BigDecimal;
  */
 @Entity
 @Table(name = "products")
-@SQLDelete(sql = "UPDATE products SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE products SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter

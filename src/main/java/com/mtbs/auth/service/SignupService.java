@@ -147,9 +147,9 @@ public class SignupService {
     }
 
     private String deriveProvisionalSlug(String email) {
-        String prefix = email.split("@")[0];
-        return prefix.replaceAll("[^a-zA-Z0-9]", "")
-                .toLowerCase()
-                .substring(0, Math.min(prefix.length(), 20));
+        String cleaned = email.split("@")[0]
+                .replaceAll("[^a-zA-Z0-9]", "")
+                .toLowerCase();
+        return cleaned.substring(0, Math.min(cleaned.length(), 20));
     }
 }

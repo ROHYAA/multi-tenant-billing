@@ -26,13 +26,7 @@ public class PaymentResponse {
  
     /** Actual payment date — may differ from createdAt for backdated entries. */
     private Instant paidAt;
- 
-    /**
-     * Razorpay Payment Link ID used for this payment.
-     * Null for offline payments.
-     */
-    private String razorpayPaymentLinkId;
- 
+
     /** When this record was entered into the system. */
     private Instant createdAt;
 }

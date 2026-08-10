@@ -21,7 +21,6 @@ public interface BillMapper {
     @Mapping(target = "notes", source = "notes")
     @Mapping(target = "dueDate", source = "dueDate")
     @Mapping(target = "paidAt", source = "paidAt")
-    @Mapping(target = "razorpayPaymentLinkId", source = "razorpayPaymentLinkId")
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "updatedAt", source = "updatedAt")

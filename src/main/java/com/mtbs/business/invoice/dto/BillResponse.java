@@ -49,13 +49,7 @@ public class BillResponse {
  
     /** Set when the invoice transitions to PAID. */
     private Instant paidAt;
- 
-    /**
-     * Razorpay Payment Link ID. Null until
-     * POST /api/business-invoices/{id}/payment-link is called.
-     */
-    private String razorpayPaymentLinkId;
- 
+
     // ── Line items ────────────────────────────────────────────────────────────
  
     private List<BillItemResponse> items;

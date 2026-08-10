@@ -37,8 +37,8 @@ import java.math.BigDecimal;
  *   total     = (unitPrice × quantity) + taxAmount
  */
 @Entity
-@Table(name = "business_invoice_items")
-@SQLDelete(sql = "UPDATE business_invoice_items SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@Table(name = "bill_items")
+@SQLDelete(sql = "UPDATE bill_items SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter

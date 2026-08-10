@@ -29,20 +29,15 @@ import java.time.Instant;
  *   - paidAt    = actual payment date (may be earlier for offline payments
  *                 recorded retroactively, e.g. "customer paid by cheque 3 days ago")
  *
- * Offline payments (BANK_TRANSFER, NETBANKING, CARD via POS):
- *   - razorpayPaymentLinkId is null
- *   - notes field carries the reference (UTR, cheque number, etc.)
+ * All payments are recorded manually (cash/card/UPI/bank transfer at the
+ * counter) — notes field carries any reference (UTR, cheque number, etc.).
  *
- * Online payments via Razorpay Payment Link:
- *   - razorpayPaymentLinkId is populated
- *   - notes may carry additional context
- *
- * CASH is intentionally not in PaymentMethod enum — tenants should
+ * CASH is intentionally not in PaymentMethod enum — shops should
  * use BANK_TRANSFER with a note for cash entries (better audit trail).
  */
 @Entity
-@Table(name = "business_payments")
-@SQLDelete(sql = "UPDATE business_payments SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@Table(name = "payments")
+@SQLDelete(sql = "UPDATE payments SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter
@@ -52,7 +47,7 @@ import java.time.Instant;
 public class Payment extends AuditableEntity {
 
     /**
-     * FK to business_invoices(id).
+     * FK to bills(id).
      * Stored as Long — not a @ManyToOne — no cascading needed.
      */
     @Column(name = "invoice_id", nullable = false)
@@ -86,11 +81,4 @@ public class Payment extends AuditableEntity {
      */
     @Column(name = "paid_at", nullable = false)
     private Instant paidAt;
-
-    /**
-     * Razorpay Payment Link ID (plink_XXXX) through which the customer paid.
-     * Null for offline payments.
-     */
-    @Column(name = "razorpay_payment_link_id", length = 100)
-    private String razorpayPaymentLinkId;
 }

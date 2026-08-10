@@ -24,7 +24,7 @@ import org.hibernate.annotations.SQLRestriction;
  */
 @Entity
 @Table(name = "customers")
-@SQLDelete(sql = "UPDATE customers SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE customers SET deleted = true, deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 @Getter
 @Setter

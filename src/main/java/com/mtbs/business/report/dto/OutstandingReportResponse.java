@@ -43,7 +43,7 @@ public class OutstandingReportResponse {
         private Long       customerId;
         private BigDecimal totalAmount;
  
-        /** invoice.totalAmount - sum(business_payments.amount). */
+        /** invoice.totalAmount - sum(payments.amount). */
         private BigDecimal outstandingAmount;
  
         /** Null if invoice was finalized without a due date (shouldn't happen normally). */
