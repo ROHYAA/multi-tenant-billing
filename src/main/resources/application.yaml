@@ -48,6 +48,11 @@ spring:
           starttls:
             enable: false
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -113,6 +118,9 @@ app:
     lock-duration-seconds: 30
     max-retries: 5
     cleanup-cron: "0 0 3 * * ?"
+  storage:
+    local-path: ${STORAGE_LOCAL_PATH:./uploads}
+    max-file-size-bytes: 2097152
   audit:
     enabled: true
     retention-days: 365

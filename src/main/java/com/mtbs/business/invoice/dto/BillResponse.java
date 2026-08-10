@@ -18,7 +18,7 @@ public class BillResponse {
  
     private Long   id;
  
-    /** Format: BINV-{tenantId}-{YYYYMM}-{seq}. */
+    /** Shop-configurable — see NumberSeriesService (default: "INV-{seq:04d}"). */
     private String invoiceNumber;
  
     private Long   customerId;

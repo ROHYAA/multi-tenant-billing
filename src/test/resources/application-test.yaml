@@ -114,6 +114,8 @@ app:
     rate-limit:
       max-attempts: 100             # Effectively disabled — tests shouldn't hit rate limits
       window-minutes: 60
+  storage:
+    local-path: ${java.io.tmpdir}/mtbs-test-uploads
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging:

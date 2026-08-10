@@ -21,6 +21,8 @@ import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.business.invoice.repository.BillItemRepository;
 import com.mtbs.business.invoice.repository.BillRepository;
 import com.mtbs.tenant.service.ShopService;
+import com.mtbs.tenant.numbering.enums.NumberSeriesType;
+import com.mtbs.tenant.numbering.service.NumberSeriesService;
 import com.mtbs.shared.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.YearMonth;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -82,6 +81,7 @@ public class BillService {
     private final OutboxEventPublisher outboxEventPublisher;
     private final BillMapper invoiceMapper;
     private final BillItemMapper itemMapper;
+    private final NumberSeriesService numberSeriesService;
 
     private final BillPdfService pdfService;
 
@@ -411,16 +411,14 @@ public class BillService {
     // ── Invoice number generation ─────────────────────────────────────────────
 
     /**
-     * Format: BINV-{tenantId}-{YYYYMM}-{seq:04d}
-     * "B" prefix distinguishes from platform INV-* numbers.
-     * Sequence is derived from total invoice count — monotonically increasing.
+     * Delegates to the shop's configured NumberSeries (prefix, financial-year
+     * format, atomically-incremented sequence) — see NumberSeriesService.
+     * Previously hardcoded "BINV-{tenantId}-{yearMonth}-{seq}" derived from a
+     * live COUNT(*), which both ignored shop-configurable numbering and had
+     * a race condition under concurrent bill creation.
      */
     private String generateInvoiceNumber() {
-        String yearMonth = YearMonth.now(ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yyyyMM"));
-        Long tenantId = SecurityUtils.getCurrentTenantId();
-        long seq      = invoiceRepository.countAllIncludingVoid() + 1;
-        return String.format("BINV-%d-%s-%04d", tenantId, yearMonth, seq);
+        return numberSeriesService.nextNumber(NumberSeriesType.INVOICE);
     }
 
     // ── Guard assertions ──────────────────────────────────────────────────────

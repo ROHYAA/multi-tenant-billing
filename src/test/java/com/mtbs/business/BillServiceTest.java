@@ -4,6 +4,7 @@ import com.mtbs.app.MultiTenantBillingSystemApplication;
 import com.mtbs.business.customer.entity.Customer;
 import com.mtbs.business.customer.repository.CustomerRepository;
 import com.mtbs.business.invoice.dto.AddBillItemRequest;
+import com.mtbs.business.invoice.dto.CreateBillRequest;
 import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.business.invoice.entity.BillItem;
 import com.mtbs.business.invoice.repository.BillItemRepository;
@@ -62,6 +63,51 @@ class BillServiceTest {
     void tearDown() {
         TenantContext.clear();
         testSchemaHelper.dropSchema(currentSchema);
+    }
+
+    @Nested
+    @DisplayName("create")
+    class CreateInvoiceTests {
+
+        @Test
+        @DisplayName("create assigns a NumberSeries-generated invoice number")
+        void create_assignsNumberSeriesInvoiceNumber() {
+            CreateBillRequest.InvoiceLineItemRequest item = CreateBillRequest.InvoiceLineItemRequest.builder()
+                .description("Test Item")
+                .quantity(BigDecimal.ONE)
+                .unitPrice(new BigDecimal("100"))
+                .build();
+
+            CreateBillRequest request = CreateBillRequest.builder()
+                .customerId(customerId)
+                .items(java.util.List.of(item))
+                .build();
+
+            var response = businessInvoiceService.create(request);
+
+            assertNotNull(response.getInvoiceNumber());
+            assertTrue(response.getInvoiceNumber().startsWith("INV-"),
+                "Expected NumberSeries-formatted number, got: " + response.getInvoiceNumber());
+        }
+
+        @Test
+        @DisplayName("create issues sequential invoice numbers across calls")
+        void create_multipleInvoices_sequentialNumbers() {
+            CreateBillRequest.InvoiceLineItemRequest item = CreateBillRequest.InvoiceLineItemRequest.builder()
+                .description("Test Item")
+                .quantity(BigDecimal.ONE)
+                .unitPrice(new BigDecimal("50"))
+                .build();
+            CreateBillRequest request = CreateBillRequest.builder()
+                .customerId(customerId)
+                .items(java.util.List.of(item))
+                .build();
+
+            var first  = businessInvoiceService.create(request);
+            var second = businessInvoiceService.create(request);
+
+            assertNotEquals(first.getInvoiceNumber(), second.getInvoiceNumber());
+        }
     }
 
     @Nested

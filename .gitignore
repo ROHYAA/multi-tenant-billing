@@ -30,6 +30,9 @@ target/
 *.nar
 *.zip
 *.tar.gz
+
+# Local file storage backend (LocalDiskStorageAdapter) — runtime data, not source
+uploads/
 *.rar
 nul
 
