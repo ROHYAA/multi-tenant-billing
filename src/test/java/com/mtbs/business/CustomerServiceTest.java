@@ -143,7 +143,7 @@ class CustomerServiceTest {
     class ListCustomersTests {
 
         @Test
-        @DisplayName("list returns paged results")
+        @DisplayName("list returns paged results including the system-generated walk-in customer")
         void list_returnsPagedResults() {
             for (int i = 0; i < 5; i++) {
                 customerRepository.save(Customer.builder()
@@ -155,16 +155,21 @@ class CustomerServiceTest {
             var page = customerService.list(null, org.springframework.data.domain.PageRequest.of(0, 10));
 
             assertNotNull(page);
-            assertEquals(5, page.getTotalElements());
+            // 5 created here + 1 system-generated Walk-in Customer seeded into every fresh
+            // tenant schema by migration V26 (see setUp()'s createFreshSchema()).
+            assertEquals(6, page.getTotalElements());
         }
 
         @Test
-        @DisplayName("list returns empty when no customers")
-        void list_empty_returnsEmpty() {
+        @DisplayName("list on a fresh tenant returns only the system-generated walk-in customer")
+        void list_freshTenant_containsOnlyWalkinCustomer() {
             var page = customerService.list(null, org.springframework.data.domain.PageRequest.of(0, 10));
 
             assertNotNull(page);
-            assertEquals(0, page.getTotalElements());
+            assertEquals(1, page.getTotalElements());
+            CustomerResponse onlyCustomer = page.getContent().get(0);
+            assertEquals("Walk-in Customer", onlyCustomer.getName());
+            assertTrue(onlyCustomer.getIsWalkin());
         }
     }
 
