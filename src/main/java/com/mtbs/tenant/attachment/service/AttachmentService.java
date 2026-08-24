@@ -27,8 +27,16 @@ import java.util.Set;
 @Slf4j
 public class AttachmentService {
 
+    /**
+     * WebP is deliberately excluded — the JDK's ImageIO has no built-in WebP
+     * decoder, and iText's ImageDataFactory doesn't support it either, so a
+     * webp logo/signature would upload successfully here but then silently
+     * fail to embed at PDF-render time (BillRenderSupport.loadImage fails
+     * soft and just skips it, logging "Image format cannot be recognized").
+     * Rejecting it here gives an immediate, clear error instead.
+     */
     private static final Set<String> ALLOWED_CONTENT_TYPES =
-            Set.of("image/png", "image/jpeg", "image/webp");
+            Set.of("image/png", "image/jpeg");
 
     private final AttachmentRepository attachmentRepository;
     private final StoragePort storagePort;

@@ -32,6 +32,12 @@ public class ShopSettingsResponse {
     private String signatureUrl;
     private String watermarkText;
 
+    // Bank Details
+    private String bankName;
+    private String bankAccountNo;
+    private String bankIfsc;
+    private String bankBranch;
+
     // Invoice & Regional Settings
     private String currency;
     private String currencySymbol;

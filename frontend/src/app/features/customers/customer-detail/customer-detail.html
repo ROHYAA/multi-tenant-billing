@@ -1,0 +1,93 @@
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <mat-icon class="animate-spin opacity-50">progress_activity</mat-icon>
+  </div>
+} @else if (error(); as message) {
+  <div class="flex flex-col items-center gap-3 rounded-lg border border-[var(--mat-sys-error)] py-12 text-center">
+    <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-error)]">error_outline</mat-icon>
+    <p class="text-sm opacity-80">{{ message }}</p>
+    <button mat-stroked-button (click)="retry()">Retry</button>
+  </div>
+} @else if (customer(); as c) {
+  <app-page-header
+    [title]="c.name"
+    [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Customers', link: '/customers' }, { label: c.name }]"
+  >
+    <button mat-stroked-button (click)="editCustomer()">
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
+    <button mat-stroked-button color="warn" (click)="deleteCustomer()">
+      <mat-icon>delete</mat-icon>
+      Delete
+    </button>
+  </app-page-header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <mat-card appearance="outlined" class="lg:col-span-2">
+      <mat-card-header>
+        <mat-card-title class="!text-base">Profile</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="!pt-2">
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-xs opacity-60">Email</dt>
+            <dd class="text-sm">{{ c.email || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs opacity-60">Mobile</dt>
+            <dd class="text-sm">{{ c.phone || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs opacity-60">GSTIN</dt>
+            <dd class="text-sm">{{ c.gstin || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs opacity-60">Created</dt>
+            <dd class="text-sm">{{ c.createdAt | date: 'mediumDate' }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="text-xs opacity-60">Address</dt>
+            <dd class="text-sm whitespace-pre-line">{{ c.address || '—' }}</dd>
+          </div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="flex flex-col gap-4">
+      @if (canViewBilling) {
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title class="!text-base">Billing Summary</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="!pt-2">
+            @if (summary(); as s) {
+              <dl class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <dt class="text-sm opacity-70">Outstanding</dt>
+                  <dd class="font-medium">{{ (s.outstandingAmount ?? 0) | currency: 'INR' }}</dd>
+                </div>
+                <div class="flex items-center justify-between">
+                  <dt class="text-sm opacity-70">Total bills</dt>
+                  <dd class="font-medium">{{ s.totalBills ?? '—' }}</dd>
+                </div>
+                <div class="flex items-center justify-between">
+                  <dt class="text-sm opacity-70">Last transaction</dt>
+                  <dd class="font-medium">{{ s.lastTransactionAt ? (s.lastTransactionAt | date: 'mediumDate') : '—' }}</dd>
+                </div>
+              </dl>
+            } @else {
+              <p class="text-sm opacity-60">Loading…</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <mat-card appearance="outlined">
+          <mat-card-content class="!pt-4 text-sm opacity-60">
+            You don't have permission to view billing information for this customer.
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  </div>
+}

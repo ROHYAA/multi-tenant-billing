@@ -32,11 +32,12 @@ spring:
 
   data:
     redis:
-      # REDIS_URL (a redis://[user:password@]host:port URI, e.g. Render Key
-      # Value's connectionString) takes precedence over host/port/password
-      # when set; left blank it's ignored and host/port/password apply as
-      # before — this keeps local/dev config unchanged.
-      url: ${REDIS_URL:}
+      # A SPRING_DATA_REDIS_URL env var (e.g. Render Key Value's connection
+      # string) overrides host/port/password below via Spring Boot's own
+      # relaxed env-var binding — deliberately NOT wired here as an explicit
+      # ${...} placeholder: a blank default binds to "" rather than truly
+      # absent, and Spring's Redis autoconfig tries to parse "" as a URI and
+      # fails ("Invalid Redis URL ''"), which broke every local/test context.
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}

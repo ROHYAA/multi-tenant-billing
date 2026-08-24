@@ -1,0 +1,154 @@
+<app-page-header title="Reports" [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Reports' }]" />
+
+<mat-tab-group>
+  <!-- ── Revenue ─────────────────────────────────────────────────────────── -->
+  <mat-tab label="Revenue">
+    <div class="flex flex-col gap-4 py-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <mat-form-field appearance="outline">
+          <mat-label>From</mat-label>
+          <input matInput type="date" [(ngModel)]="fromDate" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>To</mat-label>
+          <input matInput type="date" [(ngModel)]="toDate" />
+        </mat-form-field>
+        <button mat-flat-button color="primary" class="mb-5" (click)="loadRevenue()">Apply</button>
+        @if (revenueReport()) {
+          <button mat-stroked-button class="mb-5" (click)="exportRevenue()">
+            <mat-icon>download</mat-icon>
+            Export CSV
+          </button>
+        }
+      </div>
+
+      @if (revenueError(); as message) {
+        <p class="text-sm text-[var(--mat-sys-error)]">{{ message }}</p>
+      } @else if (revenueReport(); as report) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+            <div class="text-xs opacity-60">Total Revenue</div>
+            <div class="mt-1 text-2xl font-semibold">{{ formatCurrency(report.totalRevenue) }}</div>
+          </div>
+          <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+            <div class="text-xs opacity-60">Paid Bills</div>
+            <div class="mt-1 text-2xl font-semibold">{{ report.paidInvoiceCount }}</div>
+          </div>
+          <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+            <div class="text-xs opacity-60">Average Bill Value</div>
+            <div class="mt-1 text-2xl font-semibold">{{ formatCurrency(report.averageInvoiceValue) }}</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="mb-2 text-sm font-semibold opacity-70">By Payment Method</h3>
+          @if ((report.revenueByMethod | keyvalue)?.length) {
+            <div class="flex flex-col gap-1">
+              @for (entry of report.revenueByMethod | keyvalue; track entry.key) {
+                <div class="flex items-center justify-between rounded border px-3 py-2 text-sm" style="border-color: var(--mat-sys-outline-variant)">
+                  <span>{{ entry.key }}</span>
+                  <span class="font-medium">{{ formatCurrency(+(entry.value ?? 0)) }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm opacity-60">No payments recorded in this period.</p>
+          }
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ── Outstanding ─────────────────────────────────────────────────────── -->
+  <mat-tab label="Outstanding">
+    <div class="flex flex-col gap-4 py-4">
+      @if ((outstandingReport()?.items?.length ?? 0) > 0) {
+        <button mat-stroked-button class="self-end" (click)="exportOutstanding()">
+          <mat-icon>download</mat-icon>
+          Export CSV
+        </button>
+      }
+
+      @if (outstandingError(); as message) {
+        <p class="text-sm text-[var(--mat-sys-error)]">{{ message }}</p>
+      } @else if (outstandingReport(); as report) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+            <div class="text-xs opacity-60">Total Outstanding</div>
+            <div class="mt-1 text-2xl font-semibold">{{ formatCurrency(report.totalOutstanding) }}</div>
+          </div>
+          <div class="rounded-lg border p-4 border-[var(--mat-sys-error)]">
+            <div class="text-xs opacity-60">Overdue ({{ report.overdueCount }})</div>
+            <div class="mt-1 text-2xl font-semibold text-[var(--mat-sys-error)]">{{ formatCurrency(report.overdueAmount) }}</div>
+          </div>
+          <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+            <div class="text-xs opacity-60">Current ({{ report.currentCount }})</div>
+            <div class="mt-1 text-2xl font-semibold">{{ formatCurrency(report.currentAmount) }}</div>
+          </div>
+        </div>
+      }
+
+      <app-data-table
+        [columns]="outstandingColumns"
+        [page]="outstandingPage()"
+        [loading]="outstandingLoading()"
+        emptyTitle="Nothing outstanding"
+        emptyMessage="Every open bill has been paid."
+      />
+    </div>
+  </mat-tab>
+
+  <!-- ── Monthly ─────────────────────────────────────────────────────────── -->
+  <mat-tab label="Monthly">
+    <div class="flex flex-col gap-4 py-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <mat-form-field appearance="outline" class="w-32">
+          <mat-label>Year</mat-label>
+          <mat-select [(ngModel)]="selectedYear" (selectionChange)="loadMonthly()">
+            @for (y of years; track y) { <mat-option [value]="y">{{ y }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        @if (monthlyRows().length > 0) {
+          <button mat-stroked-button class="mb-5" (click)="exportMonthly()">
+            <mat-icon>download</mat-icon>
+            Export CSV
+          </button>
+        }
+      </div>
+
+      @if (monthlyError(); as message) {
+        <p class="text-sm text-[var(--mat-sys-error)]">{{ message }}</p>
+      } @else {
+        <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+          <h3 class="mb-3 text-sm font-semibold opacity-70">Revenue Collected</h3>
+          <app-bar-chart [data]="monthlyChartData()" [valueFormatter]="currencyFormatter" />
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border" style="border-color: var(--mat-sys-outline-variant)">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b text-left text-xs opacity-60" style="border-color: var(--mat-sys-outline-variant)">
+                <th class="p-3 font-medium">Month</th>
+                <th class="p-3 text-right font-medium">Bills</th>
+                <th class="p-3 text-right font-medium">Invoiced</th>
+                <th class="p-3 text-right font-medium">Collected</th>
+                <th class="p-3 text-right font-medium">Outstanding</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of monthlyRows(); track row.month) {
+                <tr class="border-b last:border-0" style="border-color: var(--mat-sys-outline-variant)">
+                  <td class="p-3">{{ row.monthName }}</td>
+                  <td class="p-3 text-right">{{ row.invoiceCount }}</td>
+                  <td class="p-3 text-right">{{ formatCurrency(row.invoiceTotal) }}</td>
+                  <td class="p-3 text-right">{{ formatCurrency(row.collected) }}</td>
+                  <td class="p-3 text-right">{{ formatCurrency(row.outstanding) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>

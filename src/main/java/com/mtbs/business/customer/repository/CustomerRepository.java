@@ -19,6 +19,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByEmail(String email);
 
+    /** The single system-seeded Walk-in Customer for this tenant schema — see V26 migration. */
+    Optional<Customer> findByIsWalkinTrue();
+
     /**
      * Paginated search — called only when search term is non-blank.
      * CAST(:search AS string) is NOT used — the parameter is always a non-null
@@ -29,20 +32,21 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
      * rather than the LIKE operand, binding it as bytea on PostgreSQL.
      * Fix: never pass null into a JPQL query that uses the param in LOWER/LIKE.
      * The null case is handled in CustomerService.list() before calling here.
+     *
+     * No static ORDER BY here on purpose — Spring Data appends the caller's
+     * Pageable.getSort() to a @Query method automatically as long as the
+     * query itself doesn't already declare an ORDER BY. A hardcoded ORDER BY
+     * here previously took precedence over any client-requested sort (e.g.
+     * ?sort=name,asc), silently ignoring it. The controller's
+     * @PageableDefault(sort = "createdAt") supplies the default order when
+     * the caller doesn't specify one.
      */
     @Query("""
         SELECT c FROM Customer c
         WHERE LOWER(c.name)  LIKE LOWER(CONCAT('%', :search, '%'))
            OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%'))
-        ORDER BY c.createdAt DESC
         """)
     Page<Customer> searchByKeyword(@Param("search") String search, Pageable pageable);
-
-    /**
-     * Paginated list of all customers — called when no search term is provided.
-     * Separate method avoids any null parameter binding entirely.
-     */
-    Page<Customer> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     /**
      * Check whether this customer has any non-void invoices.

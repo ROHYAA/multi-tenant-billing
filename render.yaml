@@ -34,10 +34,12 @@ services:
           property: password
 
       # Redis — auto-wired to the mtbs-redis Key Value service below via its
-      # internal connection string. REDIS_HOST/PORT are unused once REDIS_URL
-      # is set (see application.yaml) but Spring still requires them present
-      # to bind — any non-blank placeholder value is fine.
-      - key: REDIS_URL
+      # internal connection string. SPRING_DATA_REDIS_URL is Spring Boot's
+      # own native env var name (auto-binds to spring.data.redis.url with no
+      # YAML wiring needed) and takes precedence over REDIS_HOST/PORT, which
+      # are still required present for Spring to bind but are otherwise
+      # unused once the URL is set — any non-blank placeholder is fine.
+      - key: SPRING_DATA_REDIS_URL
         fromService:
           type: keyvalue
           name: mtbs-redis

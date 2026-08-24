@@ -2,6 +2,7 @@ package com.mtbs.business.invoice.template;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Map;
 
 /**
  * Converts a monetary amount to words using the Indian numbering system
@@ -9,6 +10,18 @@ import java.math.RoundingMode;
  * invoices/cheques. Only used when ShopSettings.showAmountInWords is true.
  */
 final class AmountToWordsConverter {
+
+    /**
+     * Reads naturally in a words sentence ("...Rupees Only") instead of the
+     * raw ISO code ("...INR Only"). Unrecognized codes fall back to printing
+     * the code itself, unchanged from the original behavior.
+     */
+    private static final Map<String, String> CURRENCY_NAMES = Map.of(
+            "INR", "Rupees",
+            "USD", "Dollars",
+            "EUR", "Euros",
+            "GBP", "Pounds"
+    );
 
     private static final String[] UNDER_TWENTY = {
             "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
@@ -28,8 +41,10 @@ final class AmountToWordsConverter {
         long rupees = rounded.longValue();
         int paise = rounded.subtract(BigDecimal.valueOf(rupees)).movePointRight(2).intValue();
 
+        String currencyName = CURRENCY_NAMES.getOrDefault(currencyCode, currencyCode);
+
         StringBuilder result = new StringBuilder();
-        result.append(convertWholeNumber(rupees)).append(" ").append(currencyCode);
+        result.append(convertWholeNumber(rupees)).append(" ").append(currencyName);
         if (paise > 0) {
             result.append(" and ").append(convertWholeNumber(paise)).append(" Paise");
         }

@@ -64,9 +64,10 @@ import java.util.stream.Collectors;
  * Calculation (stored, never recomputed on read):
  *   itemTax   = ROUND((unitPrice × qty) × (taxPct / 100), 2)
  *   itemTotal = ROUND((unitPrice × qty) + itemTax, 2)
- *   invoice.subtotal   = sum(unitPrice × qty)
- *   invoice.taxAmount  = sum(itemTax)
- *   invoice.totalAmount = subtotal + taxAmount
+ *   invoice.subtotal      = sum(unitPrice × qty)
+ *   invoice.taxAmount     = sum(itemTax)
+ *   invoice.discountAmount = set once at creation (bill-level only, never derived from items)
+ *   invoice.totalAmount   = subtotal - discountAmount + taxAmount (rejected if negative)
  */
 @Service
 @RequiredArgsConstructor
@@ -105,6 +106,7 @@ public class BillService {
                 .status(InvoiceStatus.DRAFT)
                 .currency(request.getCurrency() != null ? request.getCurrency() : "INR")
                 .notes(request.getNotes())
+                .discountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO)
                 .build();
 
         Bill saved = invoiceRepository.save(invoice);
@@ -320,9 +322,19 @@ public class BillService {
             taxAmount = taxAmount.add(item.getTaxAmount());
         }
 
+        BigDecimal discountAmount = invoice.getDiscountAmount() != null
+                ? invoice.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal grandTotal = subtotal.add(taxAmount).subtract(discountAmount)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        if (grandTotal.compareTo(BigDecimal.ZERO) < 0) {
+            throw ResourceException.invalid(
+                "Discount amount cannot exceed the bill's subtotal plus tax.");
+        }
+
         invoice.setSubtotal(subtotal.setScale(2, RoundingMode.HALF_UP));
         invoice.setTaxAmount(taxAmount.setScale(2, RoundingMode.HALF_UP));
-        invoice.setTotalAmount(subtotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP));
+        invoice.setTotalAmount(grandTotal);
     }
 
     // ── Line item builders ────────────────────────────────────────────────────

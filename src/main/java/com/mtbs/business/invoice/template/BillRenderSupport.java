@@ -132,16 +132,16 @@ class BillRenderSupport {
                 Rectangle pageSize = page.getPageSize();
                 PdfCanvas canvas = new PdfCanvas(page);
 
-                PdfExtGState gState = new PdfExtGState().setFillOpacity(0.12f);
+                PdfExtGState gState = new PdfExtGState().setFillOpacity(0.06f);
                 canvas.saveState();
                 canvas.setExtGState(gState);
                 canvas.setFillColor(DeviceGray.BLACK);
                 canvas.beginText();
-                canvas.setFontAndSize(font, Math.min(pageSize.getWidth(), pageSize.getHeight()) / 6);
+                canvas.setFontAndSize(font, Math.min(pageSize.getWidth(), pageSize.getHeight()) / 9);
                 canvas.setTextMatrix(
                         (float) Math.cos(Math.toRadians(45)), (float) Math.sin(Math.toRadians(45)),
                         (float) -Math.sin(Math.toRadians(45)), (float) Math.cos(Math.toRadians(45)),
-                        pageSize.getWidth() / 6, pageSize.getHeight() / 3);
+                        pageSize.getWidth() / 5, pageSize.getHeight() / 2.2f);
                 canvas.showText(settings.getWatermarkText());
                 canvas.endText();
                 canvas.restoreState();

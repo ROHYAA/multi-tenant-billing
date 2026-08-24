@@ -22,9 +22,12 @@ caveats" at the bottom before relying on it for anything real.
   refresh on `/dashboard`) to `index.html` so Angular's client-side router
   still works; an unmatched `/api/**` path stays a plain 404 as before.
 - `application.yaml`: `server.port` now reads `${PORT:8080}` (Render sets
-  `PORT`); `spring.data.redis.url` is a new optional field that, when set,
-  overrides host/port/password — used to wire Render's Key Value connection
-  string without touching how local/dev Redis config works.
+  `PORT`). Redis's URL isn't wired via an explicit YAML placeholder — that
+  was tried and reverted (an unset value bound to `""` rather than truly
+  absent, which broke Spring's Redis autoconfiguration locally). Instead,
+  `render.yaml` sets `SPRING_DATA_REDIS_URL` directly, which Spring Boot
+  binds to `spring.data.redis.url` on its own via standard relaxed env-var
+  binding, with no YAML changes needed and no effect on local/dev/test.
 
 All of this was verified locally end-to-end (full `mvn test` suite passing,
 plus a manual smoke test: signup → cookie set → authenticated API call →
@@ -98,5 +101,5 @@ free tier's cold start (see below) — not a bug.
 ## Rolling back to local-only
 
 Nothing about local `mvn spring-boot:run` / `docker-compose up` changed —
-`PORT` and `REDIS_URL` are both optional and default to prior behavior when
+`PORT` is optional and defaults to prior behavior when
 unset.

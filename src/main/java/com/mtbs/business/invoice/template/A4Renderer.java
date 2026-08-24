@@ -56,6 +56,7 @@ public class A4Renderer implements BillTemplateRenderer {
     private static final DeviceRgb TABLE_HEADER = new DeviceRgb(248, 250, 252);
     private static final DeviceRgb BORDER_COLOR = new DeviceRgb(226, 232, 240);
     private static final DeviceRgb MUTED_TEXT   = new DeviceRgb(100, 116, 139);
+    private static final DeviceRgb HEADER_MUTED_TEXT = new DeviceRgb(191, 219, 254);
 
     private final BillRenderSupport support;
 
@@ -85,7 +86,7 @@ public class A4Renderer implements BillTemplateRenderer {
         PdfWriter writer   = new PdfWriter(baos, writerProperties);
         PdfDocument pdfDoc = new PdfDocument(writer);
         Document document  = new Document(pdfDoc, PageSize.A4);
-        document.setMargins(marginPt + 35, marginPt + 45, marginPt + 35, marginPt + 45);
+        document.setMargins(marginPt + 18, marginPt + 24, marginPt + 18, marginPt + 24);
 
         PdfFont regular = PdfFontFactory.createFont("Helvetica");
         PdfFont bold    = PdfFontFactory.createFont("Helvetica-Bold");
@@ -148,14 +149,14 @@ public class A4Renderer implements BillTemplateRenderer {
         }
         if (!contact.isEmpty()) {
             document.add(new Paragraph(contact.toString())
-                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(12));
+                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(6));
         }
     }
 
     private void addHeader(Document document, Bill invoice, BillRenderOptions options, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table headerTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(20);
+                .setMarginBottom(10);
 
         String copyLabel = support.copyLabelText(options);
         Cell titleCell = new Cell()
@@ -167,7 +168,7 @@ public class A4Renderer implements BillTemplateRenderer {
                         .setFontColor(new DeviceRgb(186, 230, 253)))
                 .setBackgroundColor(HEADER_BG)
                 .setBorder(Border.NO_BORDER)
-                .setPadding(16);
+                .setPadding(10);
         if (copyLabel != null) {
             titleCell.add(new Paragraph(copyLabel)
                     .setFont(bold).setFontSize(baseFontSize * 0.8f)
@@ -179,21 +180,26 @@ public class A4Renderer implements BillTemplateRenderer {
         String dueDate     = invoice.getDueDate() != null
                 ? formatInstant(invoice.getDueDate()) : "—";
 
+        // HEADER_MUTED_TEXT (not MUTED_TEXT) — MUTED_TEXT's slate gray is barely
+        // legible against HEADER_BG's blue; this pale-blue tint keeps contrast on
+        // the colored header while still reading as secondary/label text.
         Cell metaCell = new Cell()
                 .add(new Paragraph("Invoice date")
                         .setFont(regular).setFontSize(baseFontSize * 0.9f)
-                        .setFontColor(MUTED_TEXT))
+                        .setFontColor(HEADER_MUTED_TEXT))
                 .add(new Paragraph(invoiceDate)
                         .setFont(bold).setFontSize(baseFontSize * 1.1f)
-                        .setMarginBottom(8))
+                        .setFontColor(ColorConstants.WHITE)
+                        .setMarginBottom(6))
                 .add(new Paragraph("Due date")
                         .setFont(regular).setFontSize(baseFontSize * 0.9f)
-                        .setFontColor(MUTED_TEXT))
+                        .setFontColor(HEADER_MUTED_TEXT))
                 .add(new Paragraph(dueDate)
-                        .setFont(bold).setFontSize(baseFontSize * 1.1f))
+                        .setFont(bold).setFontSize(baseFontSize * 1.1f)
+                        .setFontColor(ColorConstants.WHITE))
                 .setBackgroundColor(HEADER_BG)
                 .setBorder(Border.NO_BORDER)
-                .setPadding(16)
+                .setPadding(10)
                 .setTextAlignment(TextAlignment.RIGHT);
         headerTable.addCell(metaCell);
 
@@ -204,7 +210,7 @@ public class A4Renderer implements BillTemplateRenderer {
                                     ShopSettings settings, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table billingTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(20);
+                .setMarginBottom(10);
 
         StringBuilder billTo = new StringBuilder();
         billTo.append(customer.getName()).append("\n");
@@ -238,13 +244,13 @@ public class A4Renderer implements BillTemplateRenderer {
         billingTable.addCell(statusCell);
 
         document.add(billingTable);
-        document.add(new LineSeparator(new SolidLine(0.5f)).setMarginBottom(16));
+        document.add(new LineSeparator(new SolidLine(0.5f)).setMarginBottom(8));
     }
 
     private void addItemsTable(Document document, List<BillItem> items, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table table = new Table(UnitValue.createPercentArray(new float[]{38, 8, 14, 8, 14, 18}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(16);
+                .setMarginBottom(8);
 
         String[] headers = {"Description", "Qty", "Unit price", "Tax %", "Tax", "Total"};
         for (String h : headers) {
@@ -255,7 +261,7 @@ public class A4Renderer implements BillTemplateRenderer {
                     .setBorderTop(Border.NO_BORDER)
                     .setBorderLeft(Border.NO_BORDER)
                     .setBorderRight(Border.NO_BORDER)
-                    .setPadding(7));
+                    .setPadding(5));
         }
 
         for (BillItem item : items) {
@@ -273,7 +279,7 @@ public class A4Renderer implements BillTemplateRenderer {
     private void addTotals(Document document, Bill invoice, ShopSettings settings, PdfFont bold, PdfFont regular, float baseFontSize) {
         Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(20);
+                .setMarginBottom(10);
 
         totalsTable.addCell(new Cell().setBorder(Border.NO_BORDER));
 
@@ -301,7 +307,7 @@ public class A4Renderer implements BillTemplateRenderer {
         if (Boolean.TRUE.equals(settings.getShowAmountInWords())) {
             String words = support.amountInWords(invoice.getTotalAmount(), invoice.getCurrency());
             document.add(new Paragraph("Amount in words: " + words)
-                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(16));
+                    .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT).setMarginBottom(8));
         }
     }
 
@@ -332,7 +338,7 @@ public class A4Renderer implements BillTemplateRenderer {
                 .setFont(regular).setFontSize(baseFontSize)
                 .setBorderLeft(new SolidBorder(BORDER_COLOR, 3))
                 .setPaddingLeft(10)
-                .setMarginBottom(20));
+                .setMarginBottom(10));
     }
 
     private void addSignature(Document document, ShopSettings settings, PdfFont regular, float baseFontSize) {
@@ -346,9 +352,9 @@ public class A4Renderer implements BillTemplateRenderer {
             signatureImage.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.RIGHT);
             document.add(signatureImage);
         } else {
-            document.add(new Paragraph("\n\n_______________________")
+            document.add(new Paragraph("\n_______________________")
                     .setFont(regular).setFontSize(baseFontSize)
-                    .setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
+                    .setTextAlignment(TextAlignment.RIGHT).setMarginTop(10));
         }
         document.add(new Paragraph("Authorized Signatory")
                 .setFont(regular).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT)
@@ -356,7 +362,7 @@ public class A4Renderer implements BillTemplateRenderer {
     }
 
     private void addFooter(Document document, Bill invoice, ShopSettings settings, PdfFont regular, PdfFont bold, float baseFontSize) {
-        document.add(new LineSeparator(new SolidLine(0.5f)).setMarginTop(16).setMarginBottom(10));
+        document.add(new LineSeparator(new SolidLine(0.5f)).setMarginTop(8).setMarginBottom(6));
 
         if (settings.getTermsAndConditions() != null && !settings.getTermsAndConditions().isBlank()) {
             document.add(new Paragraph("Terms & Conditions").setFont(bold).setFontSize(baseFontSize * 0.9f).setFontColor(MUTED_TEXT));
@@ -389,7 +395,7 @@ public class A4Renderer implements BillTemplateRenderer {
                 .setBorderLeft(Border.NO_BORDER)
                 .setBorderRight(Border.NO_BORDER)
                 .setBorderBottom(new SolidBorder(BORDER_COLOR, 0.5f))
-                .setPadding(6)
+                .setPadding(4)
                 .setTextAlignment(align);
     }
 

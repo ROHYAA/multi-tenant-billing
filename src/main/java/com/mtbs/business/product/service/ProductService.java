@@ -51,7 +51,7 @@ public class ProductService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
-                .taxPercentage(request.getTaxPercentage())
+                .taxPercentage(request.getTaxPercentage() != null ? request.getTaxPercentage() : java.math.BigDecimal.ZERO)
                 .hsnSacCode(request.getHsnSacCode())
                 .unit(request.getUnit())
                 .isActive(true)

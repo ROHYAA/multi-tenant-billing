@@ -33,7 +33,7 @@ public class RevenueReportResponse {
  
     /**
      * Revenue broken down by payment method.
-     * Keys: CARD, UPI, NETBANKING, BANK_TRANSFER.
+     * Keys: CASH, CARD, UPI, NETBANKING, BANK_TRANSFER, CREDIT.
      * Only methods with payments in the period are included.
      */
     private Map<PaymentMethod, BigDecimal> revenueByMethod;

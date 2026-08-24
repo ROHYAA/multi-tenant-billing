@@ -1,0 +1,16 @@
+<div class="flex items-end gap-1.5 border-b" [style.height.px]="height()" style="border-color: var(--mat-sys-outline-variant)">
+  @for (bar of bars(); track bar.label) {
+    <div class="group relative flex flex-1 flex-col items-center justify-end" [title]="bar.label + ': ' + bar.formatted">
+      <div
+        class="w-full rounded-t transition-opacity group-hover:opacity-80"
+        style="background-color: var(--mat-sys-primary)"
+        [style.height.%]="bar.heightPercent"
+      ></div>
+    </div>
+  }
+</div>
+<div class="mt-1 flex gap-1.5">
+  @for (bar of bars(); track bar.label) {
+    <div class="flex-1 truncate text-center text-[10px] opacity-60">{{ bar.label }}</div>
+  }
+</div>

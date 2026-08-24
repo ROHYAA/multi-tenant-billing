@@ -17,7 +17,25 @@
             </th>
           }
           <td mat-cell *matCellDef="let row" [style.text-align]="column.align ?? 'left'">
-            {{ column.cell(row) }}
+            @if (column.type === 'badge') {
+              <span
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                [class]="column.badgeClass ? column.badgeClass(row) : ''"
+              >
+                {{ column.cell(row) }}
+              </span>
+            } @else {
+              {{ column.cell(row) }}
+            }
+          </td>
+        </ng-container>
+      }
+
+      @if (rowActions(); as actionsTpl) {
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="!text-right">Actions</th>
+          <td mat-cell *matCellDef="let row" class="!text-right" (click)="$event.stopPropagation()">
+            <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: row }" />
           </td>
         </ng-container>
       }

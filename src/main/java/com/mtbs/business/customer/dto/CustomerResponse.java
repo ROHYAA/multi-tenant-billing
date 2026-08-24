@@ -22,4 +22,7 @@ public class CustomerResponse {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    /** True only for the system-seeded Walk-in Customer — see Customer.isWalkin. */
+    private Boolean isWalkin;
 }

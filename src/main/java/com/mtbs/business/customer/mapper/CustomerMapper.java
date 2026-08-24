@@ -16,5 +16,6 @@ public interface CustomerMapper {
     @Mapping(target = "gstin", source = "gstin")
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "updatedAt", source = "updatedAt")
+    @Mapping(target = "isWalkin", source = "isWalkin")
     CustomerResponse toResponse(Customer entity);
 }

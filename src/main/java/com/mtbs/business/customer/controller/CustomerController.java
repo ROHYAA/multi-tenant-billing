@@ -77,6 +77,23 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(response), "Customers fetched successfully"));
     }
 
+    // ── GET /api/customers/walkin ─────────────────────────────────────────────
+
+    @GetMapping("/walkin")
+    @PreAuthorize("hasAuthority('PERMISSION_BILLING_MANAGE')")
+    @Operation(
+        summary = "Get the Walk-in Customer",
+        description = "Returns this shop's system-seeded Walk-in Customer record — the default " +
+                      "customer for cash/walk-in sales that don't need a real customer record. " +
+                      "Every shop has exactly one. Gated on BILLING_MANAGE rather than " +
+                      "CUSTOMER_MANAGE (matches GET /products/active) so the Billing screen works " +
+                      "for a user who can create bills but can't manage the customer list."
+    )
+    public ResponseEntity<ApiResponse<CustomerResponse>> getWalkInCustomer() {
+        CustomerResponse response = customerService.getWalkInCustomer();
+        return ResponseEntity.ok(ApiResponse.success(response, "Walk-in customer fetched successfully"));
+    }
+
     // ── GET /api/customers/{id} ───────────────────────────────────────────────
 
     @GetMapping("/{id}")

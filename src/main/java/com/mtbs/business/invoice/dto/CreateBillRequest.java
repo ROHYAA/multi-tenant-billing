@@ -28,7 +28,15 @@ public class CreateBillRequest {
  
     /** Optional memo printed at the bottom of the PDF invoice. */
     private String notes;
- 
+
+    /**
+     * Bill-level discount only (no line-item discounts). A flat deduction
+     * from the post-tax total: totalAmount = subtotal - discountAmount + taxAmount.
+     * Defaults to 0 when omitted. Rejected if it would make the total negative.
+     */
+    @DecimalMin(value = "0.00", message = "Discount amount must be zero or greater")
+    private BigDecimal discountAmount;
+
     /**
      * Initial line items. At least one is recommended but not required —
      * items can be added after creation via POST /api/business-invoices/{id}/items

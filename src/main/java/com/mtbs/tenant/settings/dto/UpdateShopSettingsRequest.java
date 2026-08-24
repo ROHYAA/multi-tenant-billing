@@ -64,6 +64,20 @@ public class UpdateShopSettingsRequest {
     @Size(max = 50)
     private String watermarkText;
 
+    // ── Bank Details ──────────────────────────────────────────────────────────
+
+    @Size(max = 255)
+    private String bankName;
+
+    @Size(max = 30)
+    private String bankAccountNo;
+
+    @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC format")
+    private String bankIfsc;
+
+    @Size(max = 255)
+    private String bankBranch;
+
     // ── Invoice & Regional Settings ──────────────────────────────────────────
 
     @Size(min = 3, max = 3, message = "Currency must be a 3-character ISO code")

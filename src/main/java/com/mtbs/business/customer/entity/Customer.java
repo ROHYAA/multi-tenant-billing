@@ -52,4 +52,15 @@ public class Customer extends AuditableEntity {
      */
     @Column(name = "gstin", length = 20)
     private String gstin;
+
+    /**
+     * True only for the single system-seeded "Walk-in Customer" row per
+     * tenant schema (see V26 migration) — the default customer for cash/
+     * walk-in sales that don't need a real customer record. Identifies the
+     * row by flag rather than name, since customers.name has no uniqueness
+     * constraint. Protected from delete/rename in CustomerService.
+     */
+    @Column(name = "is_walkin", nullable = false)
+    @Builder.Default
+    private Boolean isWalkin = false;
 }

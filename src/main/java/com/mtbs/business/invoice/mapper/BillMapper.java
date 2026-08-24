@@ -16,6 +16,7 @@ public interface BillMapper {
     @Mapping(target = "status", source = "status")
     @Mapping(target = "subtotal", source = "subtotal")
     @Mapping(target = "taxAmount", source = "taxAmount")
+    @Mapping(target = "discountAmount", source = "discountAmount")
     @Mapping(target = "totalAmount", source = "totalAmount")
     @Mapping(target = "currency", source = "currency")
     @Mapping(target = "notes", source = "notes")

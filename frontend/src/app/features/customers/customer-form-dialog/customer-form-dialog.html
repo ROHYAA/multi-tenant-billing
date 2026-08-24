@@ -1,0 +1,70 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon>{{ isEdit ? 'edit' : 'person_add' }}</mat-icon>
+  {{ isEdit ? 'Edit Customer' : 'Add Customer' }}
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="flex flex-col gap-1 !pt-1">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" autocomplete="name" />
+      @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+        <mat-error>Name is required</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>Name must be 255 characters or fewer</mat-error>
+      }
+      @if (serverError(form.controls.name); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email" />
+      @if (form.controls.email.hasError('email') && form.controls.email.touched) {
+        <mat-error>Enter a valid email address</mat-error>
+      }
+      @if (serverError(form.controls.email); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Mobile</mat-label>
+      <input matInput formControlName="phone" autocomplete="tel" placeholder="9876543210" />
+      @if (form.controls.phone.hasError('pattern') && form.controls.phone.touched) {
+        <mat-error>Enter a valid 10-digit mobile number</mat-error>
+      }
+      @if (serverError(form.controls.phone); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Address</mat-label>
+      <textarea matInput formControlName="address" rows="2"></textarea>
+      @if (serverError(form.controls.address); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>GSTIN (optional)</mat-label>
+      <input matInput formControlName="gstin" maxlength="15" placeholder="22AAAAA0000A1Z5" style="text-transform: uppercase" />
+      @if (form.controls.gstin.hasError('pattern') && form.controls.gstin.touched) {
+        <mat-error>GSTIN must be 15 alphanumeric characters</mat-error>
+      }
+      @if (serverError(form.controls.gstin); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Customer' }}
+    </button>
+  </mat-dialog-actions>
+</form>

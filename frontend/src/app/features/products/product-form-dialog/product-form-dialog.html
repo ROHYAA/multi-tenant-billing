@@ -1,0 +1,61 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon>{{ isEdit ? 'edit' : 'add_box' }}</mat-icon>
+  {{ isEdit ? 'Edit Product' : 'Add Product' }}
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="flex flex-col gap-1 !pt-1">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+      @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+        <mat-error>Name is required</mat-error>
+      }
+      @if (serverError(form.controls.name); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="2"></textarea>
+    </mat-form-field>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>Price</mat-label>
+        <input matInput type="number" min="0" step="0.01" formControlName="price" />
+        @if (form.controls.price.hasError('required') && form.controls.price.touched) {
+          <mat-error>Price is required</mat-error>
+        }
+        @if (form.controls.price.hasError('min')) {
+          <mat-error>Price cannot be negative</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tax %</mat-label>
+        <input matInput type="number" min="0" step="0.01" formControlName="taxPercentage" />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>HSN/SAC Code</mat-label>
+        <input matInput formControlName="hsnSacCode" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Unit</mat-label>
+        <input matInput formControlName="unit" placeholder="pcs, kg, hrs…" />
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Product' }}
+    </button>
+  </mat-dialog-actions>
+</form>

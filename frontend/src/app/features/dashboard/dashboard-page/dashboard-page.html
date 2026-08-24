@@ -1,0 +1,70 @@
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <h1 class="text-xl font-semibold">Dashboard</h1>
+    <p class="text-sm opacity-60">Welcome back, {{ userName }}</p>
+  </div>
+  <button mat-flat-button color="primary" routerLink="/bills/new">
+    <mat-icon>add</mat-icon>
+    New Bill
+  </button>
+</div>
+
+@if (!canViewBilling) {
+  <div class="rounded-lg border p-6 text-sm opacity-70" style="border-color: var(--mat-sys-outline-variant)">
+    You don't have permission to view billing figures. Ask an admin for the BILLING_MANAGE permission, or use the
+    Customers/Products sections from the sidebar.
+  </div>
+} @else {
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+      <div class="text-xs opacity-60">This Month's Revenue</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ revenueReport() ? currencyFormatter(revenueReport()!.totalRevenue) : '—' }}
+      </div>
+    </div>
+    <div class="rounded-lg border p-4 border-[var(--mat-sys-error)]">
+      <div class="text-xs opacity-60">Outstanding</div>
+      <div class="mt-1 text-2xl font-semibold text-[var(--mat-sys-error)]">
+        {{ outstandingReport() ? currencyFormatter(outstandingReport()!.totalOutstanding) : '—' }}
+      </div>
+    </div>
+    <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+      <div class="text-xs opacity-60">Overdue Bills</div>
+      <div class="mt-1 text-2xl font-semibold">{{ outstandingReport()?.overdueCount ?? '—' }}</div>
+    </div>
+  </div>
+
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="rounded-lg border p-4 lg:col-span-2" style="border-color: var(--mat-sys-outline-variant)">
+      <h2 class="mb-3 text-sm font-semibold opacity-70">Revenue Collected This Year</h2>
+      @if (!loading()) {
+        <app-bar-chart [data]="chartData()" [valueFormatter]="currencyFormatter" [height]="140" />
+      }
+    </div>
+
+    <div class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-semibold opacity-70">Recent Bills</h2>
+        <a routerLink="/bills" class="text-xs text-[var(--mat-sys-primary)] hover:underline">View all</a>
+      </div>
+      @if (recentBills().length === 0) {
+        <p class="text-sm opacity-60">No bills yet.</p>
+      } @else {
+        <div class="flex flex-col gap-2">
+          @for (bill of recentBills(); track bill.id) {
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex flex-col">
+                <span class="font-medium">{{ bill.invoiceNumber }}</span>
+                <span class="text-xs opacity-60">{{ bill.customerName }}</span>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span>{{ currencyFormatter(bill.totalAmount) }}</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px]" [class]="billStatusClass(bill.status)">{{ bill.status }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

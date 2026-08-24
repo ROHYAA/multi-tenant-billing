@@ -67,7 +67,7 @@ public class CustomerService {
             return customerRepository.searchByKeyword(search.trim(), pageable)
                     .map(customerMapper::toResponse);
         }
-        return customerRepository.findAllByOrderByCreatedAtDesc(pageable)
+        return customerRepository.findAll(pageable)
                 .map(customerMapper::toResponse);
     }
 
@@ -76,6 +76,14 @@ public class CustomerService {
     @Transactional
     public CustomerResponse update(Long customerId, UpdateCustomerRequest request) {
         Customer customer = findOrThrow(customerId);
+
+        // The system-seeded Walk-in Customer keeps its name permanently —
+        // it's how the Billing screen finds and defaults to it.
+        if (Boolean.TRUE.equals(customer.getIsWalkin())
+                && StringUtils.hasText(request.getName())
+                && !request.getName().equals(customer.getName())) {
+            throw ResourceException.accessDenied("The Walk-in Customer cannot be renamed.");
+        }
 
         // Email uniqueness — exclude self
         if (StringUtils.hasText(request.getEmail())
@@ -101,6 +109,10 @@ public class CustomerService {
     public void delete(Long customerId) {
         Customer customer = findOrThrow(customerId);
 
+        if (Boolean.TRUE.equals(customer.getIsWalkin())) {
+            throw ResourceException.accessDenied("The Walk-in Customer cannot be deleted.");
+        }
+
         // Block deletion if this customer has any non-void invoices
         if (customerRepository.hasActiveInvoices(customerId)) {
             throw ResourceException.invalid(
@@ -121,6 +133,18 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Customer getEntityById(Long customerId) {
         return findOrThrow(customerId);
+    }
+
+    /**
+     * Returns this shop's system-seeded Walk-in Customer (see V26 migration).
+     * Every tenant schema has exactly one. Used by the Billing screen to
+     * default-select a customer for cash/walk-in sales.
+     */
+    @Transactional(readOnly = true)
+    public CustomerResponse getWalkInCustomer() {
+        Customer customer = customerRepository.findByIsWalkinTrue()
+                .orElseThrow(() -> ResourceException.notFound("Walk-in Customer", "default"));
+        return customerMapper.toResponse(customer);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

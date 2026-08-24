@@ -44,6 +44,7 @@ public class ShopSettingsService {
         ShopSettings settings = getEntity();
 
         applyBusinessInformation(settings, request);
+        applyBankDetails(settings, request);
         applyInvoiceAndRegionalSettings(settings, request);
         applyBillSettings(settings, request);
         applyFooterSettings(settings, request);
@@ -80,6 +81,13 @@ public class ShopSettingsService {
             attachmentService.getById(r.getSignatureAttachmentId()); // throws if not found
             settings.setSignatureAttachmentId(r.getSignatureAttachmentId());
         }
+    }
+
+    private void applyBankDetails(ShopSettings settings, UpdateShopSettingsRequest r) {
+        if (r.getBankName()       != null) settings.setBankName(r.getBankName());
+        if (r.getBankAccountNo()  != null) settings.setBankAccountNo(r.getBankAccountNo());
+        if (r.getBankIfsc()       != null) settings.setBankIfsc(r.getBankIfsc());
+        if (r.getBankBranch()     != null) settings.setBankBranch(r.getBankBranch());
     }
 
     private void applyInvoiceAndRegionalSettings(ShopSettings settings, UpdateShopSettingsRequest r) {
@@ -164,6 +172,10 @@ public class ShopSettingsService {
                 .signatureAttachmentId(settings.getSignatureAttachmentId())
                 .signatureUrl(signatureUrl)
                 .watermarkText(settings.getWatermarkText())
+                .bankName(settings.getBankName())
+                .bankAccountNo(settings.getBankAccountNo())
+                .bankIfsc(settings.getBankIfsc())
+                .bankBranch(settings.getBankBranch())
                 .currency(settings.getCurrency())
                 .currencySymbol(settings.getCurrencySymbol())
                 .decimalPrecision(settings.getDecimalPrecision())

@@ -81,7 +81,17 @@ public class Bill extends AuditableEntity {
     @Builder.Default
     private BigDecimal taxAmount = BigDecimal.ZERO;
 
-    /** subtotal + taxAmount. The final amount the customer owes. */
+    /**
+     * Bill-level discount only — no line-item discounts (product decision).
+     * A flat deduction from the post-tax total, not a pre-tax taxable-value
+     * reduction — set once at creation, not editable afterward (there is no
+     * update-bill endpoint, matching how notes/customer are also fixed once set).
+     */
+    @Column(name = "discount_amount", nullable = false, precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    /** subtotal - discountAmount + taxAmount. The final amount the customer owes. */
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;

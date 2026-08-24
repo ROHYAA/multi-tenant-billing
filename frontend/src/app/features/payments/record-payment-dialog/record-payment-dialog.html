@@ -1,0 +1,53 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon>payments</mat-icon>
+  Record Payment — {{ data.invoiceNumber }}
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="flex flex-col gap-3 !pt-1">
+    @if (loadingOutstanding()) {
+      <p class="text-sm opacity-60">Loading outstanding balance…</p>
+    } @else {
+      <p class="text-sm opacity-70">Outstanding balance: <span class="font-medium">{{ outstandingBalance() | currency: 'INR' }}</span></p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Amount</mat-label>
+      <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
+      @if (form.controls.amount.hasError('required') && form.controls.amount.touched) {
+        <mat-error>Amount is required</mat-error>
+      }
+      @if (form.controls.amount.hasError('min')) {
+        <mat-error>Amount must be greater than zero</mat-error>
+      }
+    </mat-form-field>
+
+    <div>
+      <label class="mb-1 block text-sm opacity-70">Payment Mode</label>
+      <mat-button-toggle-group formControlName="method" class="w-full flex-wrap">
+        @for (m of paymentMethods; track m.value) {
+          <mat-button-toggle [value]="m.value">{{ m.label }}</mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Paid On</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="paidAt" />
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Notes (optional)</mat-label>
+      <input matInput formControlName="notes" placeholder="UTR, cheque number, etc." />
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting() || loadingOutstanding()">
+      {{ submitting() ? 'Saving…' : 'Record Payment' }}
+    </button>
+  </mat-dialog-actions>
+</form>

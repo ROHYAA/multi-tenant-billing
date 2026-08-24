@@ -31,9 +31,6 @@ import java.time.Instant;
  *
  * All payments are recorded manually (cash/card/UPI/bank transfer at the
  * counter) — notes field carries any reference (UTR, cheque number, etc.).
- *
- * CASH is intentionally not in PaymentMethod enum — shops should
- * use BANK_TRANSFER with a note for cash entries (better audit trail).
  */
 @Entity
 @Table(name = "payments")
@@ -62,7 +59,7 @@ public class Payment extends AuditableEntity {
 
     /**
      * Payment method. Reuses the existing PaymentMethod enum.
-     * CARD / UPI / NETBANKING / BANK_TRANSFER.
+     * CASH / CARD / UPI / NETBANKING / BANK_TRANSFER / CREDIT.
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)

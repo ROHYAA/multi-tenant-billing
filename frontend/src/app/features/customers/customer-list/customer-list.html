@@ -1,0 +1,56 @@
+<app-page-header title="Customers" [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Customers' }]">
+  <button mat-flat-button color="primary" (click)="openCreateDialog()">
+    <mat-icon>person_add</mat-icon>
+    Add Customer
+  </button>
+</app-page-header>
+
+<mat-form-field appearance="outline" class="mb-4 w-full max-w-sm">
+  <mat-label>Search customers</mat-label>
+  <mat-icon matPrefix class="mr-1 opacity-60">search</mat-icon>
+  <input matInput [formControl]="searchControl" placeholder="Search by name or email" />
+  @if (searchControl.value) {
+    <button mat-icon-button matSuffix (click)="searchControl.setValue('')" aria-label="Clear search">
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+</mat-form-field>
+
+@if (error(); as message) {
+  <div class="flex flex-col items-center gap-3 rounded-lg border border-[var(--mat-sys-error)] py-12 text-center">
+    <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-error)]">error_outline</mat-icon>
+    <p class="text-sm opacity-80">{{ message }}</p>
+    <button mat-stroked-button (click)="retry()">Retry</button>
+  </div>
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [page]="page()"
+    [loading]="loading()"
+    emptyTitle="No customers yet"
+    emptyMessage="Add your first customer to start billing them."
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+    (rowClick)="viewCustomer($event)"
+  >
+    <ng-template #rowActions let-customer>
+      <button mat-icon-button [matMenuTriggerFor]="rowMenu" [attr.aria-label]="'Actions for ' + customer.name">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #rowMenu="matMenu">
+        <button mat-menu-item (click)="viewCustomer(customer)">
+          <mat-icon>visibility</mat-icon>
+          <span>View</span>
+        </button>
+        <button mat-menu-item (click)="openEditDialog(customer)">
+          <mat-icon>edit</mat-icon>
+          <span>Edit</span>
+        </button>
+        <button mat-menu-item (click)="deleteCustomer(customer)">
+          <mat-icon color="warn">delete</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+    </ng-template>
+  </app-data-table>
+}

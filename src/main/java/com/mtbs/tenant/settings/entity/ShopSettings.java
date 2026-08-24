@@ -82,6 +82,20 @@ public class ShopSettings extends AuditableEntity {
     @Column(name = "watermark_text", length = 50)
     private String watermarkText;
 
+    // ── Bank Details ──────────────────────────────────────────────────────────
+
+    @Column(name = "bank_name", length = 255)
+    private String bankName;
+
+    @Column(name = "bank_account_no", length = 30)
+    private String bankAccountNo;
+
+    @Column(name = "bank_ifsc", length = 11)
+    private String bankIfsc;
+
+    @Column(name = "bank_branch", length = 255)
+    private String bankBranch;
+
     // ── Invoice & Regional Settings ──────────────────────────────────────────
 
     @Column(nullable = false, length = 3)

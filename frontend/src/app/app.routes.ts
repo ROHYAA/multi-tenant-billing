@@ -29,41 +29,63 @@ export const routes: Routes = [
       // loadComponent wiring is what later phases replace one file at a
       // time (e.g. 'customers' -> features/customers/customers.ts) without
       // touching this file's structure or the shell/guards around it.
-      // Real dashboard is a separate later phase (per Phase 2 approval).
-      { path: 'dashboard', loadComponent: comingSoon, data: { title: 'Dashboard', icon: 'dashboard' } },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard-page/dashboard-page').then((m) => m.DashboardPage),
+        data: { title: 'Dashboard', icon: 'dashboard' },
+      },
       {
         path: 'customers',
-        loadComponent: comingSoon,
         canActivate: [permissionGuard],
         data: { title: 'Customers', icon: 'people', permission: 'CUSTOMER_MANAGE' },
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/customers/customer-list/customer-list').then((m) => m.CustomerList),
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/customers/customer-detail/customer-detail').then((m) => m.CustomerDetail),
+          },
+        ],
       },
       {
         path: 'products',
-        loadComponent: comingSoon,
+        loadComponent: () => import('./features/products/product-list/product-list').then((m) => m.ProductList),
         canActivate: [permissionGuard],
         data: { title: 'Products', icon: 'inventory_2', permission: 'PRODUCT_MANAGE' },
       },
       {
         path: 'bills',
-        loadComponent: comingSoon,
         canActivate: [permissionGuard],
         data: { title: 'Bills', icon: 'receipt_long', permission: 'BILLING_MANAGE' },
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/billing/bill-list/bill-list').then((m) => m.BillList),
+          },
+          {
+            path: 'new',
+            loadComponent: () => import('./features/billing/bill-create/bill-create').then((m) => m.BillCreate),
+          },
+        ],
       },
       {
         path: 'payments',
-        loadComponent: comingSoon,
+        loadComponent: () => import('./features/payments/payments-page/payments-page').then((m) => m.PaymentsPage),
         canActivate: [permissionGuard],
         data: { title: 'Payments', icon: 'payments', permission: 'BILLING_MANAGE' },
       },
       {
         path: 'reports',
-        loadComponent: comingSoon,
+        loadComponent: () => import('./features/reports/reports-page/reports-page').then((m) => m.ReportsPage),
         canActivate: [permissionGuard],
         data: { title: 'Reports', icon: 'bar_chart', permission: 'BILLING_MANAGE' },
       },
       {
         path: 'shop-settings',
-        loadComponent: comingSoon,
+        loadComponent: () =>
+          import('./features/settings/shop-settings-page/shop-settings-page').then((m) => m.ShopSettingsPage),
         canActivate: [permissionGuard],
         data: { title: 'Shop Settings', icon: 'settings', permission: 'TENANT_MANAGE' },
       },

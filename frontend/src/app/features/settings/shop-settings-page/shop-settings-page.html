@@ -1,0 +1,248 @@
+<app-page-header title="Shop Settings" [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Shop Settings' }]">
+  @if (!loading() && !error()) {
+    <button mat-flat-button color="primary" [disabled]="saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save Changes' }}
+    </button>
+  }
+</app-page-header>
+
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <mat-icon class="animate-spin opacity-50">progress_activity</mat-icon>
+  </div>
+} @else if (error(); as message) {
+  <div class="flex flex-col items-center gap-3 rounded-lg border border-[var(--mat-sys-error)] py-12 text-center">
+    <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-error)]">error_outline</mat-icon>
+    <p class="text-sm opacity-80">{{ message }}</p>
+  </div>
+} @else {
+  <form [formGroup]="form">
+    <mat-tab-group>
+      <!-- ── Business Information ─────────────────────────────────────── -->
+      <mat-tab label="Business Info">
+        <div class="flex flex-col gap-4 py-4">
+          <div class="flex items-center gap-6">
+            <div class="flex flex-col items-center gap-2">
+              <div
+                class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border"
+                style="border-color: var(--mat-sys-outline-variant)"
+              >
+                @if (logoUrl(); as url) {
+                  <img [src]="url" crossorigin="use-credentials" alt="Shop logo" class="h-full w-full object-contain" />
+                } @else {
+                  <mat-icon class="opacity-40">storefront</mat-icon>
+                }
+              </div>
+              <button mat-stroked-button type="button" [disabled]="uploadingLogo()" (click)="logoInput.click()">
+                {{ uploadingLogo() ? 'Uploading…' : 'Upload Logo' }}
+              </button>
+              <input #logoInput type="file" accept="image/png,image/jpeg" class="hidden" (change)="onLogoSelected($event)" />
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <div
+                class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border"
+                style="border-color: var(--mat-sys-outline-variant)"
+              >
+                @if (signatureUrl(); as url) {
+                  <img [src]="url" crossorigin="use-credentials" alt="Signature" class="h-full w-full object-contain" />
+                } @else {
+                  <mat-icon class="opacity-40">draw</mat-icon>
+                }
+              </div>
+              <button mat-stroked-button type="button" [disabled]="uploadingSignature()" (click)="signatureInput.click()">
+                {{ uploadingSignature() ? 'Uploading…' : 'Upload Signature' }}
+              </button>
+              <input #signatureInput type="file" accept="image/png,image/jpeg" class="hidden" (change)="onSignatureSelected($event)" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Business Name</mat-label>
+              <input matInput formControlName="businessName" />
+              @if (serverError(form.controls.businessName); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Business Type</mat-label>
+              <mat-select formControlName="businessType">
+                @for (t of businessTypes; track t.value) { <mat-option [value]="t.value">{{ t.label }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="sm:col-span-2">
+              <mat-label>Address</mat-label>
+              <textarea matInput formControlName="address" rows="2"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>City</mat-label>
+              <input matInput formControlName="city" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>State</mat-label>
+              <input matInput formControlName="state" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Pincode</mat-label>
+              <input matInput formControlName="pincode" />
+              @if (form.controls.pincode.hasError('pattern')) { <mat-error>Must be a 6-digit pincode</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Mobile</mat-label>
+              <input matInput formControlName="mobile" />
+              @if (form.controls.mobile.hasError('pattern')) { <mat-error>Enter a valid mobile number</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email" />
+              @if (form.controls.email.hasError('email')) { <mat-error>Enter a valid email</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Website</mat-label>
+              <input matInput formControlName="website" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>GSTIN</mat-label>
+              <input matInput formControlName="gstin" style="text-transform: uppercase" />
+              @if (form.controls.gstin.hasError('pattern')) { <mat-error>Invalid GSTIN format</mat-error> }
+              @if (serverError(form.controls.gstin); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>PAN</mat-label>
+              <input matInput formControlName="pan" style="text-transform: uppercase" />
+              @if (form.controls.pan.hasError('pattern')) { <mat-error>Invalid PAN format</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>UPI ID</mat-label>
+              <input matInput formControlName="upiId" placeholder="shopname@upi" />
+              @if (form.controls.upiId.hasError('pattern')) { <mat-error>Expected format: name&#64;bank</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Watermark Text (optional)</mat-label>
+              <input matInput formControlName="watermarkText" placeholder="e.g. COPY" />
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Bank Details ──────────────────────────────────────────────── -->
+      <mat-tab label="Bank Details">
+        <div class="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Bank Name</mat-label>
+            <input matInput formControlName="bankName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Branch</mat-label>
+            <input matInput formControlName="bankBranch" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Account Number</mat-label>
+            <input matInput formControlName="bankAccountNo" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>IFSC Code</mat-label>
+            <input matInput formControlName="bankIfsc" style="text-transform: uppercase" />
+            @if (form.controls.bankIfsc.hasError('pattern')) { <mat-error>Invalid IFSC format</mat-error> }
+            @if (serverError(form.controls.bankIfsc); as message) { <mat-error>{{ message }}</mat-error> }
+          </mat-form-field>
+        </div>
+        <p class="text-sm opacity-60">Printed in the bill footer when a bill template shows bank details (e.g. the Marathi Cash Memo template).</p>
+      </mat-tab>
+
+      <!-- ── Invoice & Regional Settings ───────────────────────────────── -->
+      <mat-tab label="Invoice & Regional">
+        <div class="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Currency Code</mat-label>
+            <input matInput formControlName="currency" maxlength="3" style="text-transform: uppercase" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Currency Symbol</mat-label>
+            <input matInput formControlName="currencySymbol" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Decimal Precision</mat-label>
+            <input matInput type="number" min="0" max="4" formControlName="decimalPrecision" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Timezone</mat-label>
+            <input matInput formControlName="timezone" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Language</mat-label>
+            <input matInput formControlName="language" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Date Format</mat-label>
+            <input matInput formControlName="dateFormat" placeholder="dd/MM/yyyy" />
+          </mat-form-field>
+        </div>
+      </mat-tab>
+
+      <!-- ── Bill & Print Settings ─────────────────────────────────────── -->
+      <mat-tab label="Bill & Print">
+        <div class="flex flex-col gap-4 py-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Paper Size</mat-label>
+              <mat-select formControlName="paperSize">
+                @for (p of paperSizes; track p.value) { <mat-option [value]="p.value">{{ p.label }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Bill Template</mat-label>
+              <mat-select formControlName="billTemplateId">
+                @for (t of billTemplates(); track t.id) { <mat-option [value]="t.id">{{ t.name }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+
+            @if (isThermal) {
+              <mat-form-field appearance="outline">
+                <mat-label>Thermal Width (mm)</mat-label>
+                <input matInput type="number" min="40" max="120" formControlName="thermalWidth" />
+              </mat-form-field>
+            }
+            <mat-form-field appearance="outline">
+              <mat-label>Margin (mm)</mat-label>
+              <input matInput type="number" min="0" max="50" formControlName="margin" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Font Size (pt)</mat-label>
+              <input matInput type="number" min="6" max="72" formControlName="fontSize" />
+            </mat-form-field>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <mat-slide-toggle formControlName="showLogo">Show logo</mat-slide-toggle>
+            <mat-slide-toggle formControlName="showGst">Show GSTIN</mat-slide-toggle>
+            <mat-slide-toggle formControlName="showQrCode">Show UPI QR code</mat-slide-toggle>
+            <mat-slide-toggle formControlName="showCustomerAddress">Show customer address</mat-slide-toggle>
+            <mat-slide-toggle formControlName="showAmountInWords">Show amount in words</mat-slide-toggle>
+            <mat-slide-toggle formControlName="showSignature">Show signature</mat-slide-toggle>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Footer Settings ───────────────────────────────────────────── -->
+      <mat-tab label="Footer">
+        <div class="flex flex-col gap-4 py-4">
+          <mat-form-field appearance="outline">
+            <mat-label>Terms & Conditions</mat-label>
+            <textarea matInput formControlName="termsAndConditions" rows="3"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Warranty Text</mat-label>
+            <textarea matInput formControlName="warrantyText" rows="2"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Footer Message</mat-label>
+            <input matInput formControlName="footerMessage" />
+          </mat-form-field>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </form>
+}

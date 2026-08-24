@@ -34,8 +34,11 @@ public class BillResponse {
  
     /** Sum of per-item tax amounts. */
     private BigDecimal taxAmount;
- 
-    /** subtotal + taxAmount — the final amount owed by the customer. */
+
+    /** Bill-level discount only — flat deduction from the post-tax total. */
+    private BigDecimal discountAmount;
+
+    /** subtotal - discountAmount + taxAmount — the final amount owed by the customer. */
     private BigDecimal totalAmount;
  
     private String currency;

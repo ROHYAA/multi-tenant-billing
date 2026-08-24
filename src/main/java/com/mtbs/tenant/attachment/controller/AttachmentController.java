@@ -35,7 +35,8 @@ public class AttachmentController {
     @PreAuthorize("hasAuthority('PERMISSION_TENANT_MANAGE')")
     @Operation(
         summary = "Upload an attachment",
-        description = "Uploads a file (max 2MB, image/png|jpeg|webp only) for the given purpose. " +
+        description = "Uploads a file (max 2MB, image/png|jpeg only) for the given purpose. " +
+                      "WebP is rejected — it can't be embedded into the generated bill PDFs. " +
                       "Requires TENANT_MANAGE permission."
     )
     public ResponseEntity<ApiResponse<AttachmentResponse>> upload(

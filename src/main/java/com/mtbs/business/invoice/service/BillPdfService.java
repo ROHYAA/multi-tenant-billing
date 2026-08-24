@@ -9,6 +9,9 @@ import com.mtbs.business.invoice.repository.BillRepository;
 import com.mtbs.business.invoice.template.BillRenderOptions;
 import com.mtbs.business.invoice.template.BillTemplateRenderer;
 import com.mtbs.business.invoice.template.BillTemplateRendererRegistry;
+import com.mtbs.business.invoice.template.CopyType;
+import com.mtbs.business.payment.entity.Payment;
+import com.mtbs.business.payment.repository.PaymentRepository;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.tenant.billtemplate.entity.BillTemplate;
 import com.mtbs.tenant.billtemplate.service.BillTemplateService;
@@ -44,6 +47,7 @@ public class BillPdfService {
     private final ShopSettingsService shopSettingsService;
     private final BillTemplateService billTemplateService;
     private final BillTemplateRendererRegistry rendererRegistry;
+    private final PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
     public byte[] generatePdf(Long invoiceId, BillRenderOptions options) {
@@ -58,9 +62,16 @@ public class BillPdfService {
         String rendererKey = template.getCode() + ":" + settings.getPaperSize().name();
         BillTemplateRenderer renderer = rendererRegistry.get(rendererKey);
 
+        // Payments are fetched here (not trusted from the caller-supplied options)
+        // so every renderer can show which method(s) a bill was actually paid
+        // with, without BillService/BillController needing to know about payments.
+        List<Payment> payments = paymentRepository.findAllByInvoiceId(invoiceId);
+        CopyType copyType = options != null ? options.copyType() : null;
+        BillRenderOptions effectiveOptions = new BillRenderOptions(copyType, payments);
+
         log.info("Generating PDF for invoice={} using renderer={}", invoice.getInvoiceNumber(), rendererKey);
 
-        byte[] pdf = renderer.render(invoice, items, customer, settings, options != null ? options : BillRenderOptions.NONE);
+        byte[] pdf = renderer.render(invoice, items, customer, settings, effectiveOptions);
         log.info("PDF generated — invoiceNumber={}, bytes={}", invoice.getInvoiceNumber(), pdf.length);
         return pdf;
     }

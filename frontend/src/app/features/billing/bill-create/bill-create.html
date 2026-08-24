@@ -1,0 +1,204 @@
+<app-page-header title="New Bill" [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Bills' }, { label: 'New Bill' }]" />
+
+<div class="mx-auto flex max-w-2xl flex-col gap-6">
+  <!-- Customer -->
+  <section>
+    <h2 class="mb-2 text-sm font-semibold opacity-70">Customer</h2>
+    @if (store.customer(); as customer) {
+      <div class="flex items-center justify-between rounded-lg border px-4 py-2" style="border-color: var(--mat-sys-outline-variant)">
+        <div class="flex items-center gap-2">
+          <mat-icon class="opacity-60">person</mat-icon>
+          <span class="font-medium">{{ customer.name }}</span>
+          @if (customer.isWalkin) {
+            <span class="text-xs opacity-60">(default)</span>
+          }
+        </div>
+        <button mat-button (click)="clearCustomer()">Change</button>
+      </div>
+    } @else {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Search customer</mat-label>
+        <mat-icon matPrefix class="mr-1 opacity-60">search</mat-icon>
+        <input matInput [formControl]="customerSearch" [matAutocomplete]="customerAuto" />
+      </mat-form-field>
+      <mat-autocomplete #customerAuto="matAutocomplete" (optionSelected)="selectCustomer($event.option.value)">
+        @for (c of customerResults(); track c.id) {
+          <mat-option [value]="c">{{ c.name }} @if (c.email) { <span class="opacity-60">— {{ c.email }}</span> }</mat-option>
+        }
+      </mat-autocomplete>
+      <button mat-button (click)="addNewCustomer()">
+        <mat-icon>person_add</mat-icon>
+        Add new customer
+      </button>
+    }
+  </section>
+
+  <!-- Item entry -->
+  <section>
+    <h2 class="mb-2 text-sm font-semibold opacity-70">Item</h2>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Search product</mat-label>
+      <mat-icon matPrefix class="mr-1 opacity-60">search</mat-icon>
+      <input
+        matInput
+        [formControl]="productSearch"
+        [matAutocomplete]="productAuto"
+        (input)="onProductSearchInput()"
+        placeholder="Type to search, or enter a custom item name"
+      />
+    </mat-form-field>
+    <mat-autocomplete #productAuto="matAutocomplete" (optionSelected)="onProductSelected($event)">
+      @for (p of filteredProducts(); track p.id) {
+        <mat-option [value]="p">{{ p.name }} <span class="opacity-60">— {{ p.price | currency: 'INR' }}</span></mat-option>
+      }
+    </mat-autocomplete>
+
+    <div class="mt-2 grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-end gap-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Qty</mat-label>
+        <input matInput type="number" min="0.01" step="0.01" [value]="stagingQty()" (input)="stagingQty.set(+$any($event.target).value)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Rate</mat-label>
+        <input matInput type="number" min="0" step="0.01" [value]="stagingRate()" (input)="stagingRate.set(+$any($event.target).value)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-20">
+        <mat-label>CGST %</mat-label>
+        <input matInput type="number" min="0" step="0.01" [value]="stagingCgstPercentage()" (input)="stagingCgstPercentage.set(+$any($event.target).value)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-20">
+        <mat-label>SGST %</mat-label>
+        <input matInput type="number" min="0" step="0.01" [value]="stagingSgstPercentage()" (input)="stagingSgstPercentage.set(+$any($event.target).value)" />
+      </mat-form-field>
+      <div class="mb-5 w-24 text-right text-sm opacity-80">{{ stagingAmount() | currency: 'INR' }}</div>
+      <button mat-flat-button color="primary" class="mb-1" (click)="addToCart()">
+        <mat-icon>add</mat-icon>
+        Add
+      </button>
+    </div>
+  </section>
+
+  <!-- Items list -->
+  @if (store.items().length > 0) {
+    <section class="flex flex-col gap-2">
+      <div class="flex items-center gap-2 px-3 text-xs opacity-60">
+        <span class="flex-1">Item</span>
+        <span class="w-16 text-right">Qty</span>
+        <span class="w-20 text-right">Rate</span>
+        <span class="w-14 text-right">CGST %</span>
+        <span class="w-14 text-right">SGST %</span>
+        <span class="w-20 text-right">Amount</span>
+        <span class="w-10"></span>
+      </div>
+      @for (line of store.items(); track line.localId) {
+        <div class="flex items-center gap-2 rounded-lg border px-3 py-2" style="border-color: var(--mat-sys-outline-variant)">
+          <span class="flex-1 truncate text-sm">{{ line.description }}</span>
+          <input
+            class="w-16 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
+            style="border-color: var(--mat-sys-outline-variant)"
+            type="number"
+            min="0.01"
+            step="0.01"
+            [value]="line.quantity"
+            (change)="updateItemQty(line.localId, $any($event.target).value)"
+          />
+          <input
+            class="w-20 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
+            style="border-color: var(--mat-sys-outline-variant)"
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="line.unitPrice"
+            (change)="updateItemRate(line.localId, $any($event.target).value)"
+          />
+          <input
+            class="w-14 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
+            style="border-color: var(--mat-sys-outline-variant)"
+            type="number"
+            min="0"
+            step="0.01"
+            title="CGST %"
+            [value]="line.cgstPercentage"
+            (change)="updateItemCgst(line.localId, $any($event.target).value)"
+          />
+          <input
+            class="w-14 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
+            style="border-color: var(--mat-sys-outline-variant)"
+            type="number"
+            min="0"
+            step="0.01"
+            title="SGST %"
+            [value]="line.sgstPercentage"
+            (change)="updateItemSgst(line.localId, $any($event.target).value)"
+          />
+          <span class="w-20 text-right text-sm font-medium">{{ line.quantity * line.unitPrice | currency: 'INR' }}</span>
+          <button mat-icon-button (click)="removeItem(line.localId)" aria-label="Remove item">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Summary -->
+  <section class="rounded-lg border p-4" style="border-color: var(--mat-sys-outline-variant)">
+    <div class="flex items-center justify-between py-1 text-sm">
+      <span class="opacity-70">Subtotal</span>
+      <span>{{ store.subtotal() | currency: 'INR' }}</span>
+    </div>
+    <div class="flex items-center justify-between py-1 text-sm">
+      <span class="opacity-70">Discount</span>
+      <input
+        class="w-24 rounded border bg-transparent px-2 py-0.5 text-right text-sm"
+        style="border-color: var(--mat-sys-outline-variant)"
+        type="number"
+        min="0"
+        step="0.01"
+        [value]="store.discountAmount()"
+        (change)="updateDiscount($any($event.target).value)"
+      />
+    </div>
+    @if (store.taxAmount() > 0) {
+      <div class="flex items-center justify-between py-1 text-sm">
+        <span class="opacity-70">CGST</span>
+        <span>{{ store.cgstAmount() | currency: 'INR' }}</span>
+      </div>
+      <div class="flex items-center justify-between py-1 text-sm">
+        <span class="opacity-70">SGST</span>
+        <span>{{ store.sgstAmount() | currency: 'INR' }}</span>
+      </div>
+    }
+    <div class="mt-1 flex items-center justify-between border-t pt-2 text-base font-semibold" style="border-color: var(--mat-sys-outline-variant)">
+      <span>Total</span>
+      <span>{{ store.grandTotal() | currency: 'INR' }}</span>
+    </div>
+  </section>
+
+  <!-- Payment -->
+  <section>
+    <h2 class="mb-2 text-sm font-semibold opacity-70">Payment</h2>
+    <mat-button-toggle-group [value]="store.paymentMethod()" (change)="selectPaymentMethod($event.value)" class="w-full">
+      @for (method of paymentMethods; track method.value) {
+        <mat-button-toggle [value]="method.value" class="flex-1">{{ method.label }}</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  </section>
+
+  <!-- Actions -->
+  <section class="flex gap-2">
+    @if (!savedBillId()) {
+      <button mat-flat-button color="primary" class="!h-11 flex-1" [disabled]="submitting()" (click)="save()">
+        {{ submitting() ? 'Saving…' : 'Save' }}
+      </button>
+    } @else {
+      <button mat-stroked-button class="!h-11 flex-1" [disabled]="printing()" (click)="print()">
+        <mat-icon>print</mat-icon>
+        {{ printing() ? 'Preparing…' : 'Print' }}
+      </button>
+      <button mat-flat-button color="primary" class="!h-11 flex-1" (click)="startNewBill()">
+        <mat-icon>add</mat-icon>
+        New Bill
+      </button>
+    }
+  </section>
+</div>

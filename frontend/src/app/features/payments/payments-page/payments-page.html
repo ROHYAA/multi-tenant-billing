@@ -1,0 +1,28 @@
+<app-page-header title="Payments" [breadcrumbs]="[{ label: 'Dashboard', link: '/dashboard' }, { label: 'Payments' }]" />
+
+<p class="mb-4 text-sm opacity-60">Open bills still awaiting payment. Record a payment to mark it collected.</p>
+
+@if (error(); as message) {
+  <div class="flex flex-col items-center gap-3 rounded-lg border border-[var(--mat-sys-error)] py-12 text-center">
+    <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-error)]">error_outline</mat-icon>
+    <p class="text-sm opacity-80">{{ message }}</p>
+    <button mat-stroked-button (click)="retry()">Retry</button>
+  </div>
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [page]="page()"
+    [loading]="loading()"
+    emptyTitle="Nothing to collect"
+    emptyMessage="Every bill is either paid or still in draft."
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template #rowActions let-bill>
+      <button mat-flat-button color="primary" (click)="recordPayment(bill)">
+        <mat-icon>payments</mat-icon>
+        Record Payment
+      </button>
+    </ng-template>
+  </app-data-table>
+}
