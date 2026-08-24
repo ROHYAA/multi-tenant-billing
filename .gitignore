@@ -16,6 +16,10 @@ application-prod.yaml
 application-local.yml
 application-local.yaml
 
+# Frontend build copied here by Dockerfile for single-origin deployment —
+# never a source file, always regenerated at build time.
+src/main/resources/static/
+
 # =============================================================================
 # JAVA & MAVEN BUILD ARTIFACTS
 # =============================================================================

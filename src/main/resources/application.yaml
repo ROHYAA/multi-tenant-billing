@@ -32,9 +32,17 @@ spring:
 
   data:
     redis:
+      # REDIS_URL (a redis://[user:password@]host:port URI, e.g. Render Key
+      # Value's connectionString) takes precedence over host/port/password
+      # when set; left blank it's ignored and host/port/password apply as
+      # before — this keeps local/dev config unchanged.
+      url: ${REDIS_URL:}
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
       timeout: 6000ms
+      ssl:
+        enabled: ${REDIS_SSL:false}
 
   mail:
     host: ${MAIL_HOST}
@@ -78,7 +86,7 @@ spring:
     type: redis
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 api:
   version: v1

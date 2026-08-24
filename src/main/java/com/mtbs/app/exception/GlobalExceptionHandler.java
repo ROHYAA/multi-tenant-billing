@@ -1,10 +1,15 @@
 package com.mtbs.app.exception;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.exception.BaseException;
 import com.mtbs.shared.exception.ErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,13 +20,37 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final ObjectMapper objectMapper;
+
+    /**
+     * Thrown by Spring's static-resource handler for any unmatched path — including
+     * every client-side Angular route (e.g. /dashboard) in the single-origin bundled
+     * deployment (see Dockerfile, WebMvcConfig). An unmatched /api/** or /actuator/**
+     * path stays a plain JSON 404; everything else forwards to the bundled index.html
+     * so a hard refresh/deep link into the SPA doesn't break.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public void handleNoResourceFound(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/") || path.startsWith("/actuator/")) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write(objectMapper.writeValueAsString(
+                    ApiResponse.error("Not found", ErrorCode.RESOURCE_NOT_FOUND.getCode())));
+            return;
+        }
+        request.getRequestDispatcher("/index.html").forward(request, response);
+    }
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ApiResponse<Object>> handleBaseException(BaseException ex) {

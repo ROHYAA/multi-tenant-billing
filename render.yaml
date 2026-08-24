@@ -1,0 +1,104 @@
+# Render Blueprint — deploys the whole app (backend API + bundled Angular
+# frontend, see Dockerfile) as a single free web service, plus a free
+# Postgres instance and a free Key Value (Redis-compatible) instance, all
+# under one Render account — no other signups needed.
+#
+# Import: Render dashboard -> New -> Blueprint -> select this repo.
+
+services:
+  - type: web
+    name: mtbs-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
+
+      # Postgres — auto-wired to the mtbs-db service below. Render's
+      # fromDatabase properties don't include a ready-made JDBC URL, so
+      # DATABASE_URL is entered manually (see docs/DEPLOYMENT.md) —
+      # prefix the DB's "External Database URL" with "jdbc:".
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: mtbs-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: mtbs-db
+          property: password
+
+      # Redis — auto-wired to the mtbs-redis Key Value service below via its
+      # internal connection string. REDIS_HOST/PORT are unused once REDIS_URL
+      # is set (see application.yaml) but Spring still requires them present
+      # to bind — any non-blank placeholder value is fine.
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mtbs-redis
+          property: connectionString
+      - key: REDIS_HOST
+        value: unused
+      - key: REDIS_PORT
+        value: "6379"
+
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: "900000"
+      - key: JWT_REFRESH_EXPIRATION
+        value: "604800000"
+      - key: JWT_REFRESH_ISSUER
+        value: mtbs.app
+      - key: JWT_REFRESH_AUDIENCE
+        value: mtbs.client
+
+      # Not used for real payments in a testing deployment — fake but
+      # well-formed values so Razorpay's autoconfiguration bean resolves.
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_placeholder
+      - key: RAZORPAY_KEY_SECRET
+        value: placeholder_secret
+      - key: RAZORPAY_WEBHOOK_SECRET
+        value: placeholder_webhook_secret
+
+      # Not used for real email in a testing deployment — NotificationService
+      # is @Async and swallows send failures, so a fake unreachable host is
+      # safe here (signup/etc. still succeed; emails just silently no-op).
+      - key: MAIL_HOST
+        value: localhost
+      - key: MAIL_PORT
+        value: "1025"
+      - key: MAIL_USERNAME
+        value: dev
+      - key: MAIL_PASSWORD
+        value: dev
+      - key: MAIL_FROM_ADDRESS
+        value: dev@mtbs.local
+
+      # Same-origin deployment (frontend bundled into this same service) —
+      # set both to this service's actual public Render URL once known
+      # (shown in the Render dashboard after the first deploy).
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      - key: ADMIN_PASSWORD
+        generateValue: true
+
+  - name: mtbs-redis
+    type: keyvalue
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: mtbs-db
+    plan: free
+    databaseName: mtbs
+    user: mtbs_user

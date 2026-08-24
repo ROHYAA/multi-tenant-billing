@@ -86,7 +86,12 @@ public class SecurityConfig {
                         .requestMatchers(getPublicUrls()).permitAll()
                         .requestMatchers("/api/" + apiVersion + "/admin/**")
                         .hasAuthority("SUPER_ADMIN")
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/**").authenticated()
+                        // Everything else is the bundled Angular SPA's own static
+                        // assets/routes (see WebMvcConfig) — not an API resource,
+                        // so it's servable to anonymous visitors same as any static
+                        // web page. All /api/** authorization above is unaffected.
+                        .anyRequest().permitAll()
                 )
 
                 // JWT filter runs first, then MDC enrichment picks up the auth context
