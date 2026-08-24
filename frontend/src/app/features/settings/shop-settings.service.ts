@@ -8,8 +8,13 @@ import { Attachment, AttachmentPurpose, BillTemplate, ShopSettings, UpdateShopSe
 export class ShopSettingsService {
   private readonly api = inject(ApiClient);
 
-  /** "http://localhost:8080" from an apiBaseUrl of ".../api/v1" — attachment urls already include the /api/v1 prefix. */
-  private readonly backendOrigin = new URL(environment.apiBaseUrl).origin;
+  /**
+   * "http://localhost:8080" from an apiBaseUrl of ".../api/v1" — attachment urls
+   * already include the /api/v1 prefix. window.location.origin is passed as the
+   * base so this also works when apiBaseUrl is relative (environment.prod.ts uses
+   * "/api/v1" for same-origin deployments, which `new URL()` alone can't parse).
+   */
+  private readonly backendOrigin = new URL(environment.apiBaseUrl, window.location.origin).origin;
 
   getSettings(): Observable<ShopSettings> {
     return this.api.get<ShopSettings>('/shop-settings');
