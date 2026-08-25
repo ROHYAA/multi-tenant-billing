@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Shell } from './core/layout/shell/shell';
 import { authGuard } from './core/auth/auth-guard';
+import { adminGuard } from './core/auth/admin-guard';
 import { permissionGuard } from './core/auth/permission-guard';
 import { Forbidden } from './shared/pages/forbidden/forbidden';
 import { NotFound } from './shared/pages/not-found/not-found';
@@ -17,6 +18,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/signup/signup').then((m) => m.Signup),
   },
   { path: 'forbidden', component: Forbidden },
+
+  // Platform-admin (SUPER_ADMIN) section — a separate auth system from the
+  // tenant Shell below, so it lives outside it with its own guard.
+  {
+    path: 'admin/login',
+    loadComponent: () => import('./features/admin/admin-login/admin-login').then((m) => m.AdminLogin),
+  },
+  {
+    path: 'admin/tenants',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-tenants/admin-tenants').then((m) => m.AdminTenants),
+  },
 
   {
     path: '',

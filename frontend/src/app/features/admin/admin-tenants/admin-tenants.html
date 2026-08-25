@@ -1,0 +1,40 @@
+<div class="flex justify-end p-4">
+  <button mat-stroked-button (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    Sign out
+  </button>
+</div>
+
+<div class="mx-auto max-w-6xl px-4 pb-8">
+  <app-page-header title="Tenants" [breadcrumbs]="[{ label: 'Admin' }, { label: 'Tenants' }]">
+    <button mat-stroked-button (click)="toggleFilter()">
+      {{ pendingOnly() ? 'Showing: Pending approval' : 'Showing: All tenants' }}
+    </button>
+  </app-page-header>
+
+  @if (error(); as message) {
+    <div class="flex flex-col items-center gap-3 rounded-lg border border-[var(--mat-sys-error)] py-12 text-center">
+      <mat-icon class="!h-10 !w-10 !text-4xl text-[var(--mat-sys-error)]">error_outline</mat-icon>
+      <p class="text-sm opacity-80">{{ message }}</p>
+      <button mat-stroked-button (click)="retry()">Retry</button>
+    </div>
+  } @else {
+    <app-data-table
+      [columns]="columns"
+      [page]="page()"
+      [loading]="loading()"
+      emptyTitle="Nothing here"
+      [emptyMessage]="pendingOnly() ? 'No shops are waiting for approval.' : 'No tenants found.'"
+      (pageChange)="onPageChange($event)"
+      (sortChange)="onSortChange($event)"
+    >
+      <ng-template #rowActions let-tenant>
+        @if (tenant.status === 'PENDING_APPROVAL') {
+          <button mat-flat-button color="primary" [disabled]="approvingId() === tenant.id" (click)="approve(tenant)">
+            {{ approvingId() === tenant.id ? 'Approving…' : 'Approve' }}
+          </button>
+        }
+      </ng-template>
+    </app-data-table>
+  }
+</div>
