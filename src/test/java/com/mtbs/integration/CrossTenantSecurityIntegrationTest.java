@@ -62,6 +62,7 @@ class CrossTenantSecurityIntegrationTest {
 
     private Tenant tenantA;
     private Tenant tenantB;
+    private String adminAuthCookie;
 
     /** A single tenant's session: its access-token cookie plus the resource ids it created. */
     private static final class Tenant {
@@ -112,6 +113,12 @@ class CrossTenantSecurityIntegrationTest {
 
         t.accessTokenCookie = extractAccessTokenCookie(signup.getHeaders());
         assertThat(t.accessTokenCookie).as("signup must set an access_token cookie").isNotBlank();
+
+        // New shops start PENDING_APPROVAL (writes blocked — see JwtAuthenticationFilter)
+        // until a SUPER_ADMIN approves them; approve immediately so this test's setup
+        // writes below succeed, using the default seeded admin (V6__seed_super_admin.sql).
+        long tenantId = data(signup).path("tenant").path("tenantId").asLong();
+        approveTenant(tenantId);
 
         HttpHeaders auth = authHeaders(t);
 
@@ -170,6 +177,27 @@ class CrossTenantSecurityIntegrationTest {
                 url("/shop-settings"), HttpMethod.PUT, new HttpEntity<>(settingsBody, auth), String.class);
 
         return t;
+    }
+
+    private void approveTenant(long tenantId) {
+        if (adminAuthCookie == null) {
+            HttpHeaders loginHeaders = new HttpHeaders();
+            loginHeaders.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<String> adminLogin = restTemplate.exchange(
+                    url("/admin/auth/login"), HttpMethod.POST,
+                    new HttpEntity<>("{\"email\":\"admin@platform.com\",\"password\":\"Admin@1234\"}", loginHeaders),
+                    String.class);
+            assertThat(adminLogin.getStatusCode()).as("default seeded admin login must succeed").isEqualTo(HttpStatus.OK);
+            adminAuthCookie = extractAccessTokenCookie(adminLogin.getHeaders());
+            assertThat(adminAuthCookie).as("admin login must set an access_token cookie").isNotBlank();
+        }
+
+        HttpHeaders adminAuth = new HttpHeaders();
+        adminAuth.set(HttpHeaders.COOKIE, adminAuthCookie);
+        ResponseEntity<String> approve = restTemplate.exchange(
+                url("/admin/tenants/" + tenantId + "/approve"), HttpMethod.POST,
+                new HttpEntity<>(adminAuth), String.class);
+        assertThat(approve.getStatusCode()).as("tenant approval must succeed").isEqualTo(HttpStatus.OK);
     }
 
     private String extractAccessTokenCookie(HttpHeaders headers) {

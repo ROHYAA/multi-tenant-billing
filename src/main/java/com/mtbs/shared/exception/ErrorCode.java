@@ -25,6 +25,8 @@ public enum ErrorCode {
     TENANT_SLUG_ALREADY_EXISTS("TNT_2005", "Tenant slug already taken", HttpStatus.CONFLICT),
     TENANT_NOT_IN_ONBOARDING("TNT_2006", "Tenant is not in onboarding state", HttpStatus.BAD_REQUEST),
     ONBOARDING_STEP_OUT_OF_ORDER("TNT_2007", "Onboarding step must be completed in order", HttpStatus.BAD_REQUEST),
+    TENANT_PENDING_APPROVAL("TNT_2008", "Your shop is pending approval — you can view data but cannot make changes yet", HttpStatus.FORBIDDEN),
+    TENANT_NOT_PENDING_APPROVAL("TNT_2009", "Tenant is not pending approval", HttpStatus.CONFLICT),
 
     // Token errors
     TOKEN_INVALID("TKN_3001", "Invalid token", HttpStatus.UNAUTHORIZED),

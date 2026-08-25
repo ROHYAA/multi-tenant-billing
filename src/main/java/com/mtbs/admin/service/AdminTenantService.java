@@ -4,6 +4,7 @@ import com.mtbs.admin.dto.AdminTenantDetailResponse;
 import com.mtbs.admin.dto.AdminTenantListResponse;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.auth.service.PermissionCacheService;
+import com.mtbs.auth.service.SchemaCacheService;
 import com.mtbs.tenant.dto.tenant.ShopResponse;
 import com.mtbs.auth.dto.user.UserResponse;
 import com.mtbs.tenant.entity.Shop;
@@ -46,6 +47,7 @@ public class AdminTenantService {
     private final OutboxEventPublisher outboxEventPublisher;
     private final ShopMapper tenantMapper;
     private final PermissionCacheService permissionCacheService;
+    private final SchemaCacheService schemaCacheService;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -103,6 +105,34 @@ public class AdminTenantService {
                 .contextTenantName(tenant.getName())
                 .changesAfter(Map.of("status", request.getStatus().name()))
                 .description("Admin changed tenant status to: " + request.getStatus())
+                .module("ADMIN_TENANT_MANAGEMENT")
+                .build());
+
+        return tenantMapper.toResponse(tenant);
+    }
+
+    @Transactional
+    public ShopResponse approveTenant(Long tenantId) {
+        log.info("Admin approving tenant: {}", tenantId);
+
+        Shop tenant = tenantService.approveTenant(tenantId);
+
+        schemaCacheService.evict(tenant.getId());
+        permissionCacheService.evictTenant(tenant.getSchemaName());
+
+        eventPublisher.publishEvent(AuditLogEvent.builder()
+                .action(AuditAction.STATUS_CHANGE)
+                .entityType(AuditEntityType.TENANT)
+                .entityId(tenant.getId())
+                .entityName(tenant.getName())
+                .whoUserId(SecurityUtils.getCurrentUserId())
+                .whoUserEmail(SecurityUtils.getCurrentUserEmail())
+                .whoUserName(SecurityUtils.getCurrentUserName())
+                .whoRole(SecurityUtils.getCurrentRole())
+                .contextTenantId(tenant.getId())
+                .contextTenantName(tenant.getName())
+                .changesAfter(Map.of("status", Status.ACTIVE.name()))
+                .description("Admin approved newly signed-up shop")
                 .module("ADMIN_TENANT_MANAGEMENT")
                 .build());
 

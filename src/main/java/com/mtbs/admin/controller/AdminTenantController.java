@@ -23,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -86,6 +87,20 @@ public class AdminTenantController {
 
         ShopResponse response = adminTenantService.changeTenantStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant status updated successfully"));
+    }
+
+    // ── POST /api/admin/tenants/{id}/approve ──────────────────────────────────
+
+    @PostMapping("/{id}/approve")
+    @Operation(
+            summary = "Approve a newly self-signed-up shop",
+            description = "One-time PENDING_APPROVAL -> ACTIVE transition. New shops from self-service " +
+                    "signup can log in and read data immediately but cannot create/edit/delete anything " +
+                    "until approved. Fails with 409 if the tenant is not currently PENDING_APPROVAL."
+    )
+    public ResponseEntity<ApiResponse<ShopResponse>> approveTenant(@PathVariable Long id) {
+        ShopResponse response = adminTenantService.approveTenant(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tenant approved successfully"));
     }
 
     // ── GET /api/admin/tenants/{id}/users ─────────────────────────────────────

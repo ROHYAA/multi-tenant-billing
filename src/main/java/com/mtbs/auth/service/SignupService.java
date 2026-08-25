@@ -98,11 +98,14 @@ public class SignupService {
 
     @Transactional
     public Shop saveTenant(SignupRequest request, String schemaName, String provisionalSlug) {
+        // PENDING_APPROVAL, not ACTIVE — the shop owner can log in and read data
+        // immediately, but writes are blocked (see JwtAuthenticationFilter) until
+        // a SUPER_ADMIN approves via POST /admin/tenants/{id}/approve.
         Shop tenant = Shop.builder()
                 .name(request.getName())
                 .schemaName(schemaName)
                 .slug(provisionalSlug)
-                .status(Status.ACTIVE)
+                .status(Status.PENDING_APPROVAL)
                 .ownerEmail(request.getEmail())
                 .build();
         return tenantService.saveTenant(tenant);
@@ -117,7 +120,7 @@ public class SignupService {
                 .entityType(AuditEntityType.TENANT)
                 .entityId(tenantId)
                 .entityName("Shop")
-                .changesBefore(Map.of("status", Status.ACTIVE.name()))
+                .changesBefore(Map.of("status", Status.PENDING_APPROVAL.name()))
                 .changesAfter(Map.of("status", Status.INACTIVE.name()))
                 .description("Shop schema provisioning failed")
                 .module("TENANT_MANAGEMENT")

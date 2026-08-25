@@ -30,6 +30,14 @@ public class TenantException extends BaseException {
         return new TenantException(ErrorCode.TENANT_SUSPENDED, "Tenant ID: " + tenantId);
     }
 
+    public static TenantException pendingApproval(Long tenantId) {
+        return new TenantException(ErrorCode.TENANT_PENDING_APPROVAL, "Tenant ID: " + tenantId);
+    }
+
+    public static TenantException notPendingApproval(Long tenantId) {
+        return new TenantException(ErrorCode.TENANT_NOT_PENDING_APPROVAL, "Tenant ID: " + tenantId);
+    }
+
     // Add to TenantException.java
     public static TenantException slugAlreadyTaken(String slug) {
         return new TenantException(ErrorCode.TENANT_SLUG_ALREADY_EXISTS, "slug: " + slug);

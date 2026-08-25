@@ -4,6 +4,7 @@ import com.mtbs.auth.service.PermissionCacheService;
 import com.mtbs.auth.service.SchemaCacheService;
 import com.mtbs.auth.service.TokenVersionCacheService;
 import com.mtbs.shared.constant.SecurityConstants;
+import com.mtbs.shared.enums.auth.Status;
 import com.mtbs.shared.multitenancy.TenantContext;
 import com.mtbs.shared.util.CookieUtils;
 
@@ -13,6 +14,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -41,6 +44,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final SchemaCacheService schemaCacheService;
     private final TokenVersionCacheService tokenVersionCacheService;
     private final PermissionCacheService permissionCacheService;
+
+    @Value("${api.version}")
+    private String apiVersion;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -92,6 +98,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             TenantContext.setCurrentSchema(schemaName);
             log.debug("TenantContext set: tenantId={} schema={}", tenantId, schemaName);
 
+            if (isWriteBlockedForTenantStatus(request, tenantId)) {
+                log.warn("Blocked write for non-ACTIVE tenant: tenantId={} method={} path={}",
+                        tenantId, request.getMethod(), request.getRequestURI());
+                sendForbidden(response, "TENANT_PENDING_APPROVAL",
+                        "Your shop is pending approval — you can view data but cannot make changes yet");
+                return;
+            }
+
             if (!tokenVersionCacheService.isTokenVersionValid(schemaName, userId, tokenVersion)) {
                 log.warn("Rejected revoked token: userId={} claimedVersion={}", userId, tokenVersion);
                 sendUnauthorized(response, "TOKEN_REVOKED", "Token has been revoked");
@@ -124,6 +138,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * True if this request is a write (not GET/HEAD/OPTIONS) against a tenant
+     * whose shop status isn't ACTIVE (currently only PENDING_APPROVAL uses this —
+     * SUSPENDED/INACTIVE tenants are already blocked entirely at login/refresh).
+     * Auth-lifecycle endpoints (refresh/logout) are exempt — those must always
+     * work regardless of approval status.
+     */
+    private boolean isWriteBlockedForTenantStatus(HttpServletRequest request, Long tenantId) {
+        String method = request.getMethod();
+        if (HttpMethod.GET.matches(method) || HttpMethod.HEAD.matches(method) || HttpMethod.OPTIONS.matches(method)) {
+            return false;
+        }
+        if (request.getRequestURI().startsWith("/api/" + apiVersion + "/auth/")) {
+            return false;
+        }
+        return schemaCacheService.resolveStatus(tenantId) != Status.ACTIVE;
+    }
+
     private String getJwtFromRequest(HttpServletRequest request) {
         Optional<String> cookieToken = cookieUtils.extractAccessToken(request);
         if (cookieToken.isPresent()) {
@@ -137,11 +169,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
+    // Both write the standard ApiResponse envelope shape (top-level "message"/
+    // "errorCode") — the frontend's api-response-interceptor only reads a
+    // top-level "message" field to surface error text to the user; a nested
+    // shape here would silently fall back to a generic error message instead.
     private void sendUnauthorized(HttpServletResponse response, String code, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, code, message);
+    }
+
+    private void sendForbidden(HttpServletResponse response, String code, String message) throws IOException {
+        writeErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, code, message);
+    }
+
+    private void writeErrorResponse(HttpServletResponse response, int status, String code, String message) throws IOException {
+        response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(String.format(
-                "{\"success\":false,\"error\":{\"code\":\"%s\",\"message\":\"%s\"}}",
-                code, message));
+                "{\"success\":false,\"message\":\"%s\",\"errorCode\":\"%s\"}",
+                message, code));
     }
 }

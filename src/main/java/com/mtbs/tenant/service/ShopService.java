@@ -166,6 +166,27 @@ public class ShopService {
                         "Shop deactivated by owner");
         }
 
+        /**
+         * SUPER_ADMIN-only: one-time PENDING_APPROVAL -> ACTIVE transition for a newly
+         * self-signed-up shop. No audit event fired here (unlike deactivateTenant/
+         * reactivateTenant) — this runs from admin context with no active tenant schema,
+         * and fireAuditEvent's outbox write is tenant-schema-scoped; AdminTenantService
+         * fires the audit event itself instead, the same way changeTenantStatus does.
+         */
+        @Transactional
+        public Shop approveTenant(Long tenantId) {
+                log.info("Approving tenant id: {}", tenantId);
+                Shop tenant = tenantRepository.findById(tenantId)
+                                .orElseThrow(() -> TenantException.notFound(tenantId));
+
+                if (tenant.getStatus() != Status.PENDING_APPROVAL) {
+                        throw TenantException.notPendingApproval(tenantId);
+                }
+
+                tenant.setStatus(Status.ACTIVE);
+                return tenantRepository.save(tenant);
+        }
+
         @Transactional
         public void reactivateTenant(Long tenantId) {
                 log.info("Reactivating tenant id: {}", tenantId);
