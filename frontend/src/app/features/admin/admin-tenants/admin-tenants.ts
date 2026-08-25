@@ -6,6 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Sort } from '@angular/material/sort';
 import { ApiError, PageResponse } from '../../../core/models/api-response.model';
 import { AdminAuthService } from '../../../core/auth/admin-auth';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { DataTable, DataTableColumn } from '../../../shared/components/data-table/data-table';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { AdminTenant, TenantStatus } from '../admin-tenant.model';
@@ -20,13 +21,15 @@ import { Router } from '@angular/router';
 export class AdminTenants {
   private readonly tenantService = inject(AdminTenantService);
   private readonly adminAuth = inject(AdminAuthService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
 
   protected readonly page = signal<PageResponse<AdminTenant> | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly approvingId = signal<number | null>(null);
+  /** Row currently mid-request (approve/suspend/reactivate) — disables its own button only. */
+  protected readonly busyId = signal<number | null>(null);
   protected readonly pendingOnly = signal(true);
 
   private pageIndex = 0;
@@ -91,15 +94,57 @@ export class AdminTenants {
   }
 
   approve(tenant: AdminTenant): void {
-    this.approvingId.set(tenant.id);
+    this.busyId.set(tenant.id);
     this.tenantService.approve(tenant.id).subscribe({
       next: () => {
-        this.approvingId.set(null);
+        this.busyId.set(null);
         this.snackBar.open(`${tenant.name} approved — the owner can now create/edit/delete.`, 'Dismiss', { duration: 5000 });
         this.load();
       },
       error: (err: ApiError) => {
-        this.approvingId.set(null);
+        this.busyId.set(null);
+        this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
+      },
+    });
+  }
+
+  suspend(tenant: AdminTenant): void {
+    this.confirmDialogService
+      .confirm({
+        title: 'Suspend shop?',
+        message: `${tenant.name} will lose all access immediately — the owner won't be able to log in at all until reactivated. Use this when their payment lapses.`,
+        confirmLabel: 'Suspend',
+        danger: true,
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.changeStatus(tenant, 'SUSPENDED', 'Suspended by admin — payment not received');
+      });
+  }
+
+  reactivate(tenant: AdminTenant): void {
+    this.confirmDialogService
+      .confirm({
+        title: 'Reactivate shop?',
+        message: `${tenant.name} will regain full access immediately.`,
+        confirmLabel: 'Reactivate',
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.changeStatus(tenant, 'ACTIVE', 'Reactivated by admin — payment received');
+      });
+  }
+
+  private changeStatus(tenant: AdminTenant, status: TenantStatus, reason: string): void {
+    this.busyId.set(tenant.id);
+    this.tenantService.changeStatus(tenant.id, status, reason).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.snackBar.open(`${tenant.name} is now ${status}.`, 'Dismiss', { duration: 5000 });
+        this.load();
+      },
+      error: (err: ApiError) => {
+        this.busyId.set(null);
         this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
       },
     });

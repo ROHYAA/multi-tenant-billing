@@ -30,8 +30,16 @@
     >
       <ng-template #rowActions let-tenant>
         @if (tenant.status === 'PENDING_APPROVAL') {
-          <button mat-flat-button color="primary" [disabled]="approvingId() === tenant.id" (click)="approve(tenant)">
-            {{ approvingId() === tenant.id ? 'Approving…' : 'Approve' }}
+          <button mat-flat-button color="primary" [disabled]="busyId() === tenant.id" (click)="approve(tenant)">
+            {{ busyId() === tenant.id ? 'Approving…' : 'Approve' }}
+          </button>
+        } @else if (tenant.status === 'ACTIVE') {
+          <button mat-stroked-button color="warn" [disabled]="busyId() === tenant.id" (click)="suspend(tenant)">
+            {{ busyId() === tenant.id ? 'Suspending…' : 'Suspend' }}
+          </button>
+        } @else if (tenant.status === 'SUSPENDED') {
+          <button mat-flat-button color="primary" [disabled]="busyId() === tenant.id" (click)="reactivate(tenant)">
+            {{ busyId() === tenant.id ? 'Reactivating…' : 'Reactivate' }}
           </button>
         }
       </ng-template>

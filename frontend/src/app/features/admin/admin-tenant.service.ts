@@ -17,4 +17,8 @@ export class AdminTenantService {
   approve(tenantId: number): Observable<AdminTenant> {
     return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/approve`);
   }
+
+  changeStatus(tenantId: number, status: TenantStatus, reason: string): Observable<AdminTenant> {
+    return this.api.put<AdminTenant>(`/admin/tenants/${tenantId}/status`, { status, reason });
+  }
 }

@@ -4,7 +4,23 @@ import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../auth/auth';
 
-const AUTH_ENDPOINTS = ['/auth/login', '/auth/signup', '/auth/refresh'];
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/signup',
+  '/auth/refresh',
+  // /auth/me is the app-boot "do I have a tenant session?" check (see
+  // AuthService.bootstrapSession) — it already has its own 401 handling
+  // (mark resolved, leave currentUser null) and runs on every page load,
+  // including public/admin pages with no tenant session at all. Without
+  // this exclusion, that routine 401 triggered a refresh attempt (which
+  // 500s with no session to refresh) and then force-navigated to /login —
+  // silently yanking anyone away from e.g. /admin/login while they were
+  // trying to sign in there.
+  '/auth/me',
+  // Admin is a completely separate auth system (own cookies, own /admin/auth/*
+  // endpoints) — a 401 here must never trigger a tenant-session refresh/redirect.
+  '/admin/',
+];
 
 /**
  * (1) Attaches cookies to every request — there is no token to attach, the
