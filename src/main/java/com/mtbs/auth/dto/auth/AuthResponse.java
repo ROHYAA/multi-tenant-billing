@@ -1,6 +1,7 @@
 package com.mtbs.auth.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.mtbs.shared.enums.auth.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,6 +51,8 @@ public class AuthResponse {
     public static class TenantInfo {
         private Long tenantId;
         private String tenantName;
+        /** ACTIVE, PENDING_APPROVAL, SUSPENDED, etc. — drives the Shell's status banner. */
+        private Status tenantStatus;
     }
 
     @Getter
@@ -82,7 +85,8 @@ public class AuthResponse {
             String tenantName,
             boolean isFirstLogin,
             boolean isTrial,
-            boolean requiresOnboarding) {
+            boolean requiresOnboarding,
+            Status tenantStatus) {
 
         Instant expiresAt = issuedAt.plusSeconds(expiresIn);
 
@@ -96,6 +100,7 @@ public class AuthResponse {
                 .tenant(TenantInfo.builder()
                         .tenantId(tenantId)
                         .tenantName(tenantName)
+                        .tenantStatus(tenantStatus)
                         .build())
                 .session(SessionInfo.builder()
                         .issuedAt(issuedAt)

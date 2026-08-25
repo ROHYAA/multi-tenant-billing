@@ -1,3 +1,5 @@
+export type TenantStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'REGISTERED' | 'PENDING_APPROVAL';
+
 /** Mirrors com.mtbs.auth.dto.auth.AuthResponse — flattened for frontend convenience. */
 export interface CurrentUser {
   userId: number;
@@ -6,6 +8,8 @@ export interface CurrentUser {
   permissions: string[];
   tenantId: number | null;
   tenantName: string | null;
+  /** The SHOP's status, not the user's — null for a SUPER_ADMIN session (no tenant). */
+  tenantStatus: TenantStatus | null;
   isFirstLogin: boolean;
   isTrial: boolean;
   requiresOnboarding: boolean;
@@ -26,7 +30,7 @@ export interface SignupRequest {
 /** Raw shape of com.mtbs.auth.dto.auth.AuthResponse, before flattening into CurrentUser. */
 export interface AuthResponseDto {
   user: { userId: number; email: string; role: string; permissions: string[] | null };
-  tenant: { tenantId: number; tenantName: string } | null;
+  tenant: { tenantId: number; tenantName: string; tenantStatus: TenantStatus } | null;
   session: { issuedAt: string; expiresAt: string; isFirstLogin: boolean };
   flags: { isTrial: boolean; requiresOnboarding: boolean } | null;
 }
@@ -39,6 +43,7 @@ export function toCurrentUser(dto: AuthResponseDto): CurrentUser {
     permissions: dto.user.permissions ?? [],
     tenantId: dto.tenant?.tenantId ?? null,
     tenantName: dto.tenant?.tenantName ?? null,
+    tenantStatus: dto.tenant?.tenantStatus ?? null,
     isFirstLogin: dto.session.isFirstLogin,
     isTrial: dto.flags?.isTrial ?? false,
     requiresOnboarding: dto.flags?.requiresOnboarding ?? false,
@@ -61,6 +66,8 @@ export interface UserProfileResponseDto {
   status: string;
   tenantId: number;
   tenantName?: string;
+  /** The SHOP's status, not the user's (that's the sibling `status` field). */
+  tenantStatus?: TenantStatus;
   schemaName: string;
   permissions?: string[];
 }
@@ -73,6 +80,7 @@ export function toCurrentUserFromProfile(dto: UserProfileResponseDto): CurrentUs
     permissions: dto.permissions ?? [],
     tenantId: dto.tenantId,
     tenantName: dto.tenantName ?? null,
+    tenantStatus: dto.tenantStatus ?? null,
     isFirstLogin: false,
     isTrial: false,
     requiresOnboarding: false,

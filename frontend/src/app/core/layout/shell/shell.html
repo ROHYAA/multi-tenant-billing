@@ -11,6 +11,12 @@
 
   <mat-sidenav-content class="flex h-full flex-col">
     <app-topbar (menuToggle)="toggleMobileMenu()" />
+    @if (statusBanner(); as banner) {
+      <div class="flex items-center gap-2 bg-[var(--mat-sys-error-container)] px-6 py-2 text-sm text-[var(--mat-sys-on-error-container)]">
+        <mat-icon class="!h-5 !w-5 !text-lg">{{ banner.icon }}</mat-icon>
+        <span>{{ banner.text }}</span>
+      </div>
+    }
     <main class="flex-1 overflow-auto p-6">
       <router-outlet />
     </main>

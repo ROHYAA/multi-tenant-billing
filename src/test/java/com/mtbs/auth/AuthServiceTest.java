@@ -59,7 +59,7 @@ class AuthServiceTest {
                     tokenPair.setRefreshToken("mock_refresh_token");
                     return AuthResponse.forTenantUser(
                             900L, Instant.now(), 1L, "test@test.com", "OWNER",
-                            List.of(), 1L, "Test Shop", false, false, false);
+                            List.of(), 1L, "Test Shop", false, false, false, Status.ACTIVE);
                 });
 
             when(mock.refreshInTenantSchema(any(), any(), any()))
@@ -69,7 +69,7 @@ class AuthServiceTest {
                     tokenPair.setRefreshToken("mock_new_refresh_token");
                     return AuthResponse.forTenantUser(
                             900L, Instant.now(), 1L, "test@test.com", "OWNER",
-                            List.of(), 1L, "Test Shop", false, false, false);
+                            List.of(), 1L, "Test Shop", false, false, false, Status.ACTIVE);
                 });
 
             return mock;
