@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -287,7 +288,14 @@ public class A4Renderer implements BillTemplateRenderer {
                 .setWidth(UnitValue.createPercentValue(100));
 
         addTotalRow(innerTotals, "Subtotal", fmt(invoice.getSubtotal()), regular, false, baseFontSize);
-        addTotalRow(innerTotals, "Tax",      fmt(invoice.getTaxAmount()), regular, false, baseFontSize);
+
+        // Bill/BillItem store one blended tax amount, not separate CGST/SGST fields,
+        // so this splits it 50/50 — the standard intra-state GST convention, same
+        // approach MarathiCashMemoA4Renderer already uses.
+        BigDecimal cgst = invoice.getTaxAmount().divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
+        BigDecimal sgst = invoice.getTaxAmount().subtract(cgst);
+        addTotalRow(innerTotals, "CGST", fmt(cgst), regular, false, baseFontSize);
+        addTotalRow(innerTotals, "SGST", fmt(sgst), regular, false, baseFontSize);
 
         innerTotals.addCell(new Cell(1, 2)
                 .setBorderTop(new SolidBorder(BORDER_COLOR, 0.5f))
