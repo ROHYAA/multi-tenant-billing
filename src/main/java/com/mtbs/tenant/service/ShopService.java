@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -168,14 +169,15 @@ public class ShopService {
 
         /**
          * SUPER_ADMIN-only: one-time PENDING_APPROVAL -> ACTIVE transition for a newly
-         * self-signed-up shop. No audit event fired here (unlike deactivateTenant/
-         * reactivateTenant) — this runs from admin context with no active tenant schema,
-         * and fireAuditEvent's outbox write is tenant-schema-scoped; AdminTenantService
-         * fires the audit event itself instead, the same way changeTenantStatus does.
+         * self-signed-up shop, recording the offline-payment plan they've taken. No
+         * audit event fired here (unlike deactivateTenant/reactivateTenant) — this runs
+         * from admin context with no active tenant schema, and fireAuditEvent's outbox
+         * write is tenant-schema-scoped; AdminTenantService fires the audit event
+         * itself instead, the same way changeTenantStatus does.
          */
         @Transactional
-        public Shop approveTenant(Long tenantId) {
-                log.info("Approving tenant id: {}", tenantId);
+        public Shop approveTenant(Long tenantId, String planName, Instant subscriptionExpiresAt) {
+                log.info("Approving tenant id: {} with plan={} expiresAt={}", tenantId, planName, subscriptionExpiresAt);
                 Shop tenant = tenantRepository.findById(tenantId)
                                 .orElseThrow(() -> TenantException.notFound(tenantId));
 
@@ -184,6 +186,33 @@ public class ShopService {
                 }
 
                 tenant.setStatus(Status.ACTIVE);
+                tenant.setPlanName(planName);
+                tenant.setSubscriptionExpiresAt(subscriptionExpiresAt);
+                tenant.setExpiryAlertSentAt(null);
+                return tenantRepository.save(tenant);
+        }
+
+        /**
+         * SUPER_ADMIN-only: un-suspends a shop after offline payment is received,
+         * recording the renewed plan. Distinct from the owner self-service
+         * reactivateTenant below — that one is a simple ACTIVE flip with no plan
+         * tracking; this one only applies from SUSPENDED and always sets a new
+         * expiry. Same audit-event caveat as approveTenant (see its Javadoc).
+         */
+        @Transactional
+        public Shop adminReactivateTenant(Long tenantId, String planName, Instant subscriptionExpiresAt) {
+                log.info("Admin reactivating tenant id: {} with plan={} expiresAt={}", tenantId, planName, subscriptionExpiresAt);
+                Shop tenant = tenantRepository.findById(tenantId)
+                                .orElseThrow(() -> TenantException.notFound(tenantId));
+
+                if (tenant.getStatus() != Status.SUSPENDED) {
+                        throw TenantException.notSuspended(tenantId);
+                }
+
+                tenant.setStatus(Status.ACTIVE);
+                tenant.setPlanName(planName);
+                tenant.setSubscriptionExpiresAt(subscriptionExpiresAt);
+                tenant.setExpiryAlertSentAt(null);
                 return tenantRepository.save(tenant);
         }
 

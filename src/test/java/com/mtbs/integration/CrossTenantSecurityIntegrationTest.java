@@ -194,9 +194,12 @@ class CrossTenantSecurityIntegrationTest {
 
         HttpHeaders adminAuth = new HttpHeaders();
         adminAuth.set(HttpHeaders.COOKIE, adminAuthCookie);
+        adminAuth.setContentType(MediaType.APPLICATION_JSON);
+        String approveBody = "{\"planName\":\"Test Plan\",\"subscriptionExpiresAt\":\"" +
+                java.time.Instant.now().plus(java.time.Duration.ofDays(30)) + "\"}";
         ResponseEntity<String> approve = restTemplate.exchange(
                 url("/admin/tenants/" + tenantId + "/approve"), HttpMethod.POST,
-                new HttpEntity<>(adminAuth), String.class);
+                new HttpEntity<>(approveBody, adminAuth), String.class);
         assertThat(approve.getStatusCode()).as("tenant approval must succeed").isEqualTo(HttpStatus.OK);
     }
 

@@ -12,6 +12,8 @@ public interface ShopMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "schemaName", source = "schemaName")
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "planName", source = "planName")
+    @Mapping(target = "subscriptionExpiresAt", source = "subscriptionExpiresAt")
     @Mapping(target = "createdAt", source = "createdAt")
     ShopResponse toResponse(Shop entity);
 }

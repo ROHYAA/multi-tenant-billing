@@ -32,4 +32,8 @@ public class AuthNotificationEvent implements DomainEvent {
     private Instant eventTime;
 
     private String resetLink;
+
+    // Offline-payment subscription tracking (SUBSCRIPTION_EXPIRING_SOON/SUBSCRIPTION_EXPIRED).
+    private String planName;
+    private Instant subscriptionExpiresAt;
 }

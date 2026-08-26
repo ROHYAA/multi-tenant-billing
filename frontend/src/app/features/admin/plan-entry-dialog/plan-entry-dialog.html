@@ -1,0 +1,38 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon>event_available</mat-icon>
+  {{ data.title }}
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="flex flex-col gap-1 !pt-1">
+    <p class="text-sm opacity-80">{{ data.message }}</p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Plan</mat-label>
+      <input matInput formControlName="planName" placeholder="e.g. Monthly, Yearly - ₹5000" />
+      @if (form.controls.planName.hasError('required') && form.controls.planName.touched) {
+        <mat-error>Plan is required</mat-error>
+      }
+      @if (form.controls.planName.hasError('maxlength')) {
+        <mat-error>Plan must be 100 characters or fewer</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Expires on</mat-label>
+      <input matInput [matDatepicker]="picker" [min]="minDate" formControlName="expiresAt" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+      @if (form.controls.expiresAt.hasError('required') && form.controls.expiresAt.touched) {
+        <mat-error>Expiry date is required</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+      {{ data.confirmLabel }}
+    </button>
+  </mat-dialog-actions>
+</form>

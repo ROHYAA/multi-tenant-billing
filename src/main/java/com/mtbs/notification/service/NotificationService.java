@@ -155,6 +155,8 @@ public class NotificationService {
         variables.put("deviceInfo", event.getDeviceInfo());
         variables.put("eventTime", formatInstant(event.getEventTime()));
         variables.put("resetLink", event.getResetLink());
+        variables.put("planName", event.getPlanName());
+        variables.put("subscriptionExpiresAt", formatInstant(event.getSubscriptionExpiresAt()));
 
         return variables;
     }

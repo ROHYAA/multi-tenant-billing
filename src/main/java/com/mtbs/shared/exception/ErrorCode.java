@@ -27,6 +27,7 @@ public enum ErrorCode {
     ONBOARDING_STEP_OUT_OF_ORDER("TNT_2007", "Onboarding step must be completed in order", HttpStatus.BAD_REQUEST),
     TENANT_PENDING_APPROVAL("TNT_2008", "Your shop is pending approval — you can view data but cannot make changes yet", HttpStatus.FORBIDDEN),
     TENANT_NOT_PENDING_APPROVAL("TNT_2009", "Tenant is not pending approval", HttpStatus.CONFLICT),
+    TENANT_NOT_SUSPENDED("TNT_2010", "Tenant is not suspended", HttpStatus.CONFLICT),
 
     // Token errors
     TOKEN_INVALID("TKN_3001", "Invalid token", HttpStatus.UNAUTHORIZED),

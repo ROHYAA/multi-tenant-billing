@@ -2,6 +2,7 @@ package com.mtbs.admin.service;
 
 import com.mtbs.admin.dto.AdminTenantDetailResponse;
 import com.mtbs.admin.dto.AdminTenantListResponse;
+import com.mtbs.admin.dto.ApproveTenantRequest;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.auth.service.PermissionCacheService;
 import com.mtbs.auth.service.SchemaCacheService;
@@ -112,10 +113,10 @@ public class AdminTenantService {
     }
 
     @Transactional
-    public ShopResponse approveTenant(Long tenantId) {
-        log.info("Admin approving tenant: {}", tenantId);
+    public ShopResponse approveTenant(Long tenantId, ApproveTenantRequest request) {
+        log.info("Admin approving tenant: {} plan={} expiresAt={}", tenantId, request.getPlanName(), request.getSubscriptionExpiresAt());
 
-        Shop tenant = tenantService.approveTenant(tenantId);
+        Shop tenant = tenantService.approveTenant(tenantId, request.getPlanName(), request.getSubscriptionExpiresAt());
 
         schemaCacheService.evict(tenant.getId());
         permissionCacheService.evictTenant(tenant.getSchemaName());
@@ -131,8 +132,36 @@ public class AdminTenantService {
                 .whoRole(SecurityUtils.getCurrentRole())
                 .contextTenantId(tenant.getId())
                 .contextTenantName(tenant.getName())
-                .changesAfter(Map.of("status", Status.ACTIVE.name()))
-                .description("Admin approved newly signed-up shop")
+                .changesAfter(Map.of("status", Status.ACTIVE.name(), "planName", request.getPlanName()))
+                .description("Admin approved newly signed-up shop — plan: " + request.getPlanName())
+                .module("ADMIN_TENANT_MANAGEMENT")
+                .build());
+
+        return tenantMapper.toResponse(tenant);
+    }
+
+    @Transactional
+    public ShopResponse reactivateTenant(Long tenantId, ApproveTenantRequest request) {
+        log.info("Admin reactivating tenant: {} plan={} expiresAt={}", tenantId, request.getPlanName(), request.getSubscriptionExpiresAt());
+
+        Shop tenant = tenantService.adminReactivateTenant(tenantId, request.getPlanName(), request.getSubscriptionExpiresAt());
+
+        schemaCacheService.evict(tenant.getId());
+        permissionCacheService.evictTenant(tenant.getSchemaName());
+
+        eventPublisher.publishEvent(AuditLogEvent.builder()
+                .action(AuditAction.STATUS_CHANGE)
+                .entityType(AuditEntityType.TENANT)
+                .entityId(tenant.getId())
+                .entityName(tenant.getName())
+                .whoUserId(SecurityUtils.getCurrentUserId())
+                .whoUserEmail(SecurityUtils.getCurrentUserEmail())
+                .whoUserName(SecurityUtils.getCurrentUserName())
+                .whoRole(SecurityUtils.getCurrentRole())
+                .contextTenantId(tenant.getId())
+                .contextTenantName(tenant.getName())
+                .changesAfter(Map.of("status", Status.ACTIVE.name(), "planName", request.getPlanName()))
+                .description("Admin reactivated suspended shop — plan: " + request.getPlanName())
                 .module("ADMIN_TENANT_MANAGEMENT")
                 .build());
 
@@ -188,6 +217,8 @@ public class AdminTenantService {
                 .name(tenant.getName())
                 .schemaName(tenant.getSchemaName())
                 .status(tenant.getStatus())
+                .planName(tenant.getPlanName())
+                .subscriptionExpiresAt(tenant.getSubscriptionExpiresAt())
                 .userCount(userCount != null ? userCount : 0L)
                 .createdAt(tenant.getCreatedAt())
                 .build();

@@ -119,7 +119,9 @@ public class TenantAuthService {
                 savedUser.getIsFirstLogin(),
                 isTrial,
                 requiresOnboarding,
-                tenant.getStatus()
+                tenant.getStatus(),
+                tenant.getPlanName(),
+                tenant.getSubscriptionExpiresAt()
         );
     }
 
@@ -205,7 +207,9 @@ public class TenantAuthService {
                 wasFirstLogin,
                 isTrial,
                 requiresOnboarding,
-                tenant.getStatus()
+                tenant.getStatus(),
+                tenant.getPlanName(),
+                tenant.getSubscriptionExpiresAt()
         );
     }
 
@@ -253,7 +257,9 @@ public class TenantAuthService {
                 false,
                 isTrial,
                 requiresOnboarding,
-                tenant.getStatus()
+                tenant.getStatus(),
+                tenant.getPlanName(),
+                tenant.getSubscriptionExpiresAt()
         );
     }
 
@@ -311,6 +317,8 @@ public class TenantAuthService {
                 .schemaName(tenant.getSchemaName())
                 .status(user.getStatus())
                 .tenantStatus(tenant.getStatus())
+                .planName(tenant.getPlanName())
+                .subscriptionExpiresAt(tenant.getSubscriptionExpiresAt())
                 .permissions(permissions)
                 .createdAt(user.getCreatedAt())
                 .build();

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layout/base :: layout(~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p class="greeting">Your shop has been suspended</p>
+    <p class="text">
+        Hi <strong th:text="${recipientName}">User</strong>,
+        the <strong th:text="${planName}">plan</strong> for
+        <strong th:text="${tenantName}">your shop</strong> expired on
+        <strong th:text="${subscriptionExpiresAt}">the expiry date</strong>, so access has
+        been suspended. Your data is safe and untouched — access is restored as soon as
+        the plan is renewed.
+    </p>
+    <hr class="divider"/>
+    <p class="text" style="font-size:13px; color:#6b7280;">
+        Contact your shop's admin to renew and regain access.
+    </p>
+</th:block>
+</body>
+</html>

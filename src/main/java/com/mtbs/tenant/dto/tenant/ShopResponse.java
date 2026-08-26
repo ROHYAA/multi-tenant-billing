@@ -22,5 +22,7 @@ public class ShopResponse {
     private String name;
     private String schemaName;
     private Status status;
+    private String planName;
+    private Instant subscriptionExpiresAt;
     private Instant createdAt;
 }

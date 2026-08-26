@@ -44,7 +44,13 @@ public class EmailTemplateConfig {
             Map.entry(NotificationEvent.BILL_SENT,
                     new TemplateDefinition("bill/invoice-sent", "Invoice from {{tenantName}}")),
             Map.entry(NotificationEvent.PAYMENT_RECORDED,
-                    new TemplateDefinition("bill/payment-received", "Payment received — {{invoiceNumber}}"))
+                    new TemplateDefinition("bill/payment-received", "Payment received — {{invoiceNumber}}")),
+
+            // Offline-payment subscription tracking
+            Map.entry(NotificationEvent.SUBSCRIPTION_EXPIRING_SOON,
+                    new TemplateDefinition("subscription/expiring-soon", "Your ShopLedger plan expires soon")),
+            Map.entry(NotificationEvent.SUBSCRIPTION_EXPIRED,
+                    new TemplateDefinition("subscription/suspended", "Your ShopLedger shop has been suspended"))
     );
 
     public TemplateDefinition getTemplate(NotificationEvent event) {

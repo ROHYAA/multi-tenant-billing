@@ -22,6 +22,8 @@ public class AdminTenantListResponse {
     private String name;
     private String schemaName;
     private Status status;
+    private String planName;
+    private Instant subscriptionExpiresAt;
     private long userCount;
     private Instant createdAt;
 }

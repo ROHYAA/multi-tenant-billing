@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Sort } from '@angular/material/sort';
@@ -9,9 +10,19 @@ import { AdminAuthService } from '../../../core/auth/admin-auth';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { DataTable, DataTableColumn } from '../../../shared/components/data-table/data-table';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
-import { AdminTenant, TenantStatus } from '../admin-tenant.model';
+import { AdminTenant, ApproveTenantRequest, TenantStatus } from '../admin-tenant.model';
 import { AdminTenantService } from '../admin-tenant.service';
+import { PlanEntryDialog, PlanEntryDialogData } from '../plan-entry-dialog/plan-entry-dialog';
 import { Router } from '@angular/router';
+
+/** Shop is within its 5-day expiry-reminder window (mirrors SubscriptionExpiryJob's alert window). */
+function isExpiringSoon(tenant: AdminTenant): boolean {
+  if (tenant.status !== 'ACTIVE' || !tenant.subscriptionExpiresAt) return false;
+  const daysLeft = Math.ceil(
+    (new Date(tenant.subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+  );
+  return daysLeft >= 0 && daysLeft <= 5;
+}
 
 @Component({
   selector: 'app-admin-tenants',
@@ -22,8 +33,11 @@ export class AdminTenants {
   private readonly tenantService = inject(AdminTenantService);
   private readonly adminAuth = inject(AdminAuthService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
+
+  protected readonly isExpiringSoon = isExpiringSoon;
 
   protected readonly page = signal<PageResponse<AdminTenant> | null>(null);
   protected readonly loading = signal(false);
@@ -43,13 +57,22 @@ export class AdminTenants {
       key: 'status',
       header: 'Status',
       type: 'badge',
-      cell: (t) => t.status,
+      cell: (t) => (isExpiringSoon(t) ? 'EXPIRING SOON' : t.status),
       badgeClass: (t) =>
-        t.status === 'PENDING_APPROVAL'
+        isExpiringSoon(t)
           ? 'bg-[var(--mat-sys-error-container)] text-[var(--mat-sys-on-error-container)]'
-          : t.status === 'ACTIVE'
-            ? 'bg-[var(--mat-sys-tertiary-container)] text-[var(--mat-sys-on-tertiary-container)]'
-            : 'bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface-variant)]',
+          : t.status === 'PENDING_APPROVAL'
+            ? 'bg-[var(--mat-sys-error-container)] text-[var(--mat-sys-on-error-container)]'
+            : t.status === 'ACTIVE'
+              ? 'bg-[var(--mat-sys-tertiary-container)] text-[var(--mat-sys-on-tertiary-container)]'
+              : 'bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface-variant)]',
+    },
+    { key: 'planName', header: 'Plan', cell: (t) => t.planName ?? '—' },
+    {
+      key: 'subscriptionExpiresAt',
+      header: 'Expires',
+      align: 'right',
+      cell: (t) => (t.subscriptionExpiresAt ? new Date(t.subscriptionExpiresAt).toLocaleDateString() : '—'),
     },
     { key: 'userCount', header: 'Users', align: 'right', cell: (t) => String(t.userCount) },
     { key: 'createdAt', header: 'Signed up', sortable: true, align: 'right', cell: (t) => new Date(t.createdAt).toLocaleDateString() },
@@ -94,18 +117,29 @@ export class AdminTenants {
   }
 
   approve(tenant: AdminTenant): void {
-    this.busyId.set(tenant.id);
-    this.tenantService.approve(tenant.id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.snackBar.open(`${tenant.name} approved — the owner can now create/edit/delete.`, 'Dismiss', { duration: 5000 });
-        this.load();
+    this.openPlanDialog(
+      {
+        title: 'Approve shop',
+        message: `${tenant.name} will get full write access. Enter the plan they've paid for and when it expires.`,
+        confirmLabel: 'Approve',
+        initialPlanName: tenant.planName,
+        initialExpiresAt: tenant.subscriptionExpiresAt,
       },
-      error: (err: ApiError) => {
-        this.busyId.set(null);
-        this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
+      (request) => {
+        this.busyId.set(tenant.id);
+        this.tenantService.approve(tenant.id, request).subscribe({
+          next: () => {
+            this.busyId.set(null);
+            this.snackBar.open(`${tenant.name} approved — the owner can now create/edit/delete.`, 'Dismiss', { duration: 5000 });
+            this.load();
+          },
+          error: (err: ApiError) => {
+            this.busyId.set(null);
+            this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
+          },
+        });
       },
-    });
+    );
   }
 
   suspend(tenant: AdminTenant): void {
@@ -123,15 +157,37 @@ export class AdminTenants {
   }
 
   reactivate(tenant: AdminTenant): void {
-    this.confirmDialogService
-      .confirm({
-        title: 'Reactivate shop?',
-        message: `${tenant.name} will regain full access immediately.`,
+    this.openPlanDialog(
+      {
+        title: 'Reactivate shop',
+        message: `${tenant.name} will regain full access immediately. Enter the plan they've paid for and when it expires.`,
         confirmLabel: 'Reactivate',
-      })
-      .subscribe((confirmed) => {
-        if (!confirmed) return;
-        this.changeStatus(tenant, 'ACTIVE', 'Reactivated by admin — payment received');
+        initialPlanName: tenant.planName,
+        initialExpiresAt: tenant.subscriptionExpiresAt,
+      },
+      (request) => {
+        this.busyId.set(tenant.id);
+        this.tenantService.reactivate(tenant.id, request).subscribe({
+          next: () => {
+            this.busyId.set(null);
+            this.snackBar.open(`${tenant.name} reactivated.`, 'Dismiss', { duration: 5000 });
+            this.load();
+          },
+          error: (err: ApiError) => {
+            this.busyId.set(null);
+            this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
+          },
+        });
+      },
+    );
+  }
+
+  private openPlanDialog(data: PlanEntryDialogData, onConfirm: (request: ApproveTenantRequest) => void): void {
+    this.dialog
+      .open<PlanEntryDialog, PlanEntryDialogData, ApproveTenantRequest | undefined>(PlanEntryDialog, { data })
+      .afterClosed()
+      .subscribe((request) => {
+        if (request) onConfirm(request);
       });
   }
 

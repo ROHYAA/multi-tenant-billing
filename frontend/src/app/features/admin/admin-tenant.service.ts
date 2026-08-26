@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../core/api/api-client';
 import { PageResponse } from '../../core/models/api-response.model';
-import { AdminTenant, TenantStatus } from './admin-tenant.model';
+import { AdminTenant, ApproveTenantRequest, TenantStatus } from './admin-tenant.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminTenantService {
@@ -14,8 +14,12 @@ export class AdminTenantService {
     return this.api.get<PageResponse<AdminTenant>>('/admin/tenants', params);
   }
 
-  approve(tenantId: number): Observable<AdminTenant> {
-    return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/approve`);
+  approve(tenantId: number, request: ApproveTenantRequest): Observable<AdminTenant> {
+    return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/approve`, request);
+  }
+
+  reactivate(tenantId: number, request: ApproveTenantRequest): Observable<AdminTenant> {
+    return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/reactivate`, request);
   }
 
   changeStatus(tenantId: number, status: TenantStatus, reason: string): Observable<AdminTenant> {

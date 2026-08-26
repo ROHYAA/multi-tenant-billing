@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +33,11 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
     boolean existsBySlug(String slug);
 
     Optional<Shop> findBySlug(String slug);
+
+    /** ACTIVE shops entering the pre-expiry alert window that haven't been alerted for this cycle yet. */
+    List<Shop> findByStatusAndSubscriptionExpiresAtBetweenAndExpiryAlertSentAtIsNull(
+            Status status, Instant windowStart, Instant windowEnd);
+
+    /** ACTIVE shops whose subscription has actually lapsed — auto-suspend candidates. */
+    List<Shop> findByStatusAndSubscriptionExpiresAtBefore(Status status, Instant now);
 }

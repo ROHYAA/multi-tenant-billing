@@ -28,6 +28,9 @@ public class UserProfileResponse {
     private String tenantName;
     /** The SHOP's status (ACTIVE/PENDING_APPROVAL/SUSPENDED/etc.), not the user's — drives the Shell's status banner. */
     private Status tenantStatus;
+    /** Offline-payment plan tracking — drives the Shell's expiry-reminder banner. */
+    private String planName;
+    private Instant subscriptionExpiresAt;
     private String schemaName;
     private List<String> permissions;
     private Instant createdAt;

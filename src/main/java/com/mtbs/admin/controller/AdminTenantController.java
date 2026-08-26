@@ -2,6 +2,7 @@ package com.mtbs.admin.controller;
 
 import com.mtbs.admin.dto.AdminTenantDetailResponse;
 import com.mtbs.admin.dto.AdminTenantListResponse;
+import com.mtbs.admin.dto.ApproveTenantRequest;
 import com.mtbs.admin.dto.ChangeTenantStatusRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.shared.dto.common.PageResponse;
@@ -94,13 +95,29 @@ public class AdminTenantController {
     @PostMapping("/{id}/approve")
     @Operation(
             summary = "Approve a newly self-signed-up shop",
-            description = "One-time PENDING_APPROVAL -> ACTIVE transition. New shops from self-service " +
-                    "signup can log in and read data immediately but cannot create/edit/delete anything " +
-                    "until approved. Fails with 409 if the tenant is not currently PENDING_APPROVAL."
+            description = "One-time PENDING_APPROVAL -> ACTIVE transition, recording the offline-payment " +
+                    "plan they've taken. New shops from self-service signup can log in and read data " +
+                    "immediately but cannot create/edit/delete anything until approved. Fails with 409 if " +
+                    "the tenant is not currently PENDING_APPROVAL."
     )
-    public ResponseEntity<ApiResponse<ShopResponse>> approveTenant(@PathVariable Long id) {
-        ShopResponse response = adminTenantService.approveTenant(id);
+    public ResponseEntity<ApiResponse<ShopResponse>> approveTenant(
+            @PathVariable Long id, @Valid @RequestBody ApproveTenantRequest request) {
+        ShopResponse response = adminTenantService.approveTenant(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Tenant approved successfully"));
+    }
+
+    // ── POST /api/admin/tenants/{id}/reactivate ───────────────────────────────
+
+    @PostMapping("/{id}/reactivate")
+    @Operation(
+            summary = "Reactivate a suspended shop after offline payment",
+            description = "SUSPENDED -> ACTIVE transition, recording the renewed plan and a new expiry " +
+                    "date. Fails with 409 if the tenant is not currently SUSPENDED."
+    )
+    public ResponseEntity<ApiResponse<ShopResponse>> reactivateTenant(
+            @PathVariable Long id, @Valid @RequestBody ApproveTenantRequest request) {
+        ShopResponse response = adminTenantService.reactivateTenant(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tenant reactivated successfully"));
     }
 
     // ── GET /api/admin/tenants/{id}/users ─────────────────────────────────────

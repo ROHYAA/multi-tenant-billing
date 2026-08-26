@@ -53,6 +53,9 @@ public class AuthResponse {
         private String tenantName;
         /** ACTIVE, PENDING_APPROVAL, SUSPENDED, etc. — drives the Shell's status banner. */
         private Status tenantStatus;
+        /** Offline-payment plan tracking — drives the Shell's expiry-reminder banner. */
+        private String planName;
+        private Instant subscriptionExpiresAt;
     }
 
     @Getter
@@ -86,7 +89,9 @@ public class AuthResponse {
             boolean isFirstLogin,
             boolean isTrial,
             boolean requiresOnboarding,
-            Status tenantStatus) {
+            Status tenantStatus,
+            String planName,
+            Instant subscriptionExpiresAt) {
 
         Instant expiresAt = issuedAt.plusSeconds(expiresIn);
 
@@ -101,6 +106,8 @@ public class AuthResponse {
                         .tenantId(tenantId)
                         .tenantName(tenantName)
                         .tenantStatus(tenantStatus)
+                        .planName(planName)
+                        .subscriptionExpiresAt(subscriptionExpiresAt)
                         .build())
                 .session(SessionInfo.builder()
                         .issuedAt(issuedAt)

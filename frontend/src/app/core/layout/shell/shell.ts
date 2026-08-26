@@ -38,13 +38,16 @@ export class Shell {
   protected readonly mobileMenuOpen = signal(false);
 
   /**
-   * Persistent reminder for a shop that isn't fully ACTIVE — without this,
-   * the only feedback a PENDING_APPROVAL/SUSPENDED owner gets is a one-off
-   * toast the moment a write is blocked (see JwtAuthenticationFilter), with
-   * nothing on screen explaining why beforehand.
+   * Persistent reminder for a shop that isn't fully ACTIVE, or whose plan is
+   * about to lapse — without this, the only feedback a PENDING_APPROVAL/
+   * SUSPENDED owner gets is a one-off toast the moment a write is blocked
+   * (see JwtAuthenticationFilter), with nothing on screen explaining why
+   * beforehand, and an about-to-expire ACTIVE owner gets no warning at all
+   * before SubscriptionExpiryJob auto-suspends them.
    */
   protected readonly statusBanner = computed(() => {
-    switch (this.authService.currentUser()?.tenantStatus) {
+    const user = this.authService.currentUser();
+    switch (user?.tenantStatus) {
       case 'PENDING_APPROVAL':
         return {
           icon: 'hourglass_top',
@@ -55,6 +58,20 @@ export class Shell {
           icon: 'block',
           text: 'Your shop has been suspended. Contact support to reactivate it.',
         };
+      case 'ACTIVE': {
+        if (!user.subscriptionExpiresAt) return null;
+        const daysLeft = Math.ceil(
+          (new Date(user.subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+        );
+        if (daysLeft > 5 || daysLeft < 0) return null;
+        return {
+          icon: 'event_busy',
+          text:
+            daysLeft === 0
+              ? `Your ${user.planName ?? 'plan'} expires today. Renew now to avoid losing access.`
+              : `Your ${user.planName ?? 'plan'} expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to avoid losing access.`,
+        };
+      }
       default:
         return null;
     }

@@ -10,6 +10,9 @@ export interface CurrentUser {
   tenantName: string | null;
   /** The SHOP's status, not the user's — null for a SUPER_ADMIN session (no tenant). */
   tenantStatus: TenantStatus | null;
+  /** Offline-payment plan tracking — null until an admin approves/reactivates with a plan set. */
+  planName: string | null;
+  subscriptionExpiresAt: string | null;
   isFirstLogin: boolean;
   isTrial: boolean;
   requiresOnboarding: boolean;
@@ -30,7 +33,13 @@ export interface SignupRequest {
 /** Raw shape of com.mtbs.auth.dto.auth.AuthResponse, before flattening into CurrentUser. */
 export interface AuthResponseDto {
   user: { userId: number; email: string; role: string; permissions: string[] | null };
-  tenant: { tenantId: number; tenantName: string; tenantStatus: TenantStatus } | null;
+  tenant: {
+    tenantId: number;
+    tenantName: string;
+    tenantStatus: TenantStatus;
+    planName: string | null;
+    subscriptionExpiresAt: string | null;
+  } | null;
   session: { issuedAt: string; expiresAt: string; isFirstLogin: boolean };
   flags: { isTrial: boolean; requiresOnboarding: boolean } | null;
 }
@@ -44,6 +53,8 @@ export function toCurrentUser(dto: AuthResponseDto): CurrentUser {
     tenantId: dto.tenant?.tenantId ?? null,
     tenantName: dto.tenant?.tenantName ?? null,
     tenantStatus: dto.tenant?.tenantStatus ?? null,
+    planName: dto.tenant?.planName ?? null,
+    subscriptionExpiresAt: dto.tenant?.subscriptionExpiresAt ?? null,
     isFirstLogin: dto.session.isFirstLogin,
     isTrial: dto.flags?.isTrial ?? false,
     requiresOnboarding: dto.flags?.requiresOnboarding ?? false,
@@ -68,6 +79,8 @@ export interface UserProfileResponseDto {
   tenantName?: string;
   /** The SHOP's status, not the user's (that's the sibling `status` field). */
   tenantStatus?: TenantStatus;
+  planName?: string;
+  subscriptionExpiresAt?: string;
   schemaName: string;
   permissions?: string[];
 }
@@ -81,6 +94,8 @@ export function toCurrentUserFromProfile(dto: UserProfileResponseDto): CurrentUs
     tenantId: dto.tenantId,
     tenantName: dto.tenantName ?? null,
     tenantStatus: dto.tenantStatus ?? null,
+    planName: dto.planName ?? null,
+    subscriptionExpiresAt: dto.subscriptionExpiresAt ?? null,
     isFirstLogin: false,
     isTrial: false,
     requiresOnboarding: false,
