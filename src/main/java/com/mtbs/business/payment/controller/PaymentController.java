@@ -1,6 +1,9 @@
 package com.mtbs.business.payment.controller;
 
+import com.mtbs.business.payment.dto.CustomerOutstandingResponse;
+import com.mtbs.business.payment.dto.CustomerPaymentResponse;
 import com.mtbs.business.payment.dto.PaymentResponse;
+import com.mtbs.business.payment.dto.RecordCustomerPaymentRequest;
 import com.mtbs.business.payment.dto.RecordPaymentRequest;
 import com.mtbs.shared.dto.common.ApiResponse;
 import com.mtbs.business.payment.service.PaymentService;
@@ -13,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -80,7 +84,7 @@ public class PaymentController {
     @Operation(
         summary = "Get outstanding balance for an invoice",
         description = "Returns the remaining amount owed by the customer for an invoice. " +
-                      "outstanding = invoice.totalAmount - sum(recorded payments). " +
+                      "outstanding = invoice.totalAmount - sum(CONFIRMED payments). " +
                       "Returns 0 for fully paid invoices. " +
                       "Use this to pre-fill the amount field when recording a payment. " +
                       "Requires BILLING_MANAGE permission."
@@ -88,5 +92,62 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<BigDecimal>> getOutstanding(@PathVariable Long invoiceId) {
         BigDecimal outstanding = paymentService.getOutstandingBalance(invoiceId);
         return ResponseEntity.ok(ApiResponse.success(outstanding, "Outstanding balance fetched successfully"));
+    }
+
+    // ── POST /api/business-payments/customer/{customerId} ─────────────────────
+
+    @PostMapping("/customer/{customerId}")
+    @Operation(
+        summary = "Record a customer payment (FIFO allocation)",
+        description = "Records one payment from a customer and allocates it across that " +
+                      "customer's OPEN bills oldest-first, without picking a specific bill. " +
+                      "method = CREDIT is recorded PENDING on every bill it touches and never " +
+                      "marks a bill PAID. Returns 400 if the customer has no OPEN bills, or if " +
+                      "the amount exceeds their total outstanding balance (no overpayment/" +
+                      "carry-forward credit is supported — re-enter the correct amount). " +
+                      "Requires BILLING_MANAGE permission."
+    )
+    public ResponseEntity<ApiResponse<CustomerPaymentResponse>> recordForCustomer(
+            @PathVariable Long customerId,
+            @Valid @RequestBody RecordCustomerPaymentRequest request) {
+
+        CustomerPaymentResponse response = paymentService.recordForCustomer(customerId, request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Payment recorded successfully"));
+    }
+
+    // ── GET /api/business-payments/customer/{customerId}/outstanding ──────────
+
+    @GetMapping("/customer/{customerId}/outstanding")
+    @Operation(
+        summary = "Get a customer's total outstanding balance and per-bill breakdown",
+        description = "Returns the sum of outstanding across every OPEN bill for this customer, " +
+                      "plus the oldest-first breakdown a FIFO payment would be applied against. " +
+                      "Use this to preview how a customer-level payment will settle before " +
+                      "submitting it. Requires BILLING_MANAGE permission."
+    )
+    public ResponseEntity<ApiResponse<CustomerOutstandingResponse>> getCustomerOutstanding(
+            @PathVariable Long customerId) {
+
+        CustomerOutstandingResponse response = paymentService.getCustomerOutstanding(customerId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Customer outstanding balance fetched successfully"));
+    }
+
+    // ── PATCH /api/business-payments/{paymentId}/confirm ───────────────────────
+
+    @PatchMapping("/{paymentId}/confirm")
+    @Operation(
+        summary = "Confirm a pending credit payment",
+        description = "Flips a PENDING credit payment to CONFIRMED — use this once the " +
+                      "customer actually pays back what they owed on credit. Re-runs the " +
+                      "'is the bill now fully paid' check, so the bill transitions to PAID " +
+                      "here if this confirmation completes it. Returns 400 if the payment " +
+                      "isn't PENDING, or if the bill was already fully paid by other payments " +
+                      "in the meantime. Requires BILLING_MANAGE permission."
+    )
+    public ResponseEntity<ApiResponse<PaymentResponse>> confirmPayment(@PathVariable Long paymentId) {
+        PaymentResponse response = paymentService.confirmPayment(paymentId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment confirmed successfully"));
     }
 }

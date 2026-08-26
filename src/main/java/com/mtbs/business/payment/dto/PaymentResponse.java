@@ -2,6 +2,7 @@ package com.mtbs.business.payment.dto;
  
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mtbs.shared.enums.bill.PaymentMethod;
+import com.mtbs.shared.enums.bill.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,10 +21,13 @@ public class PaymentResponse {
     private BigDecimal    amount;
     private String        currency;
     private PaymentMethod method;
- 
+
+    /** PENDING for an unconfirmed credit payment; CONFIRMED for collected cash. */
+    private PaymentStatus status;
+
     /** Free-text reference: UTR, cheque number, etc. */
     private String notes;
- 
+
     /** Actual payment date — may differ from createdAt for backdated entries. */
     private Instant paidAt;
 

@@ -1,14 +1,29 @@
 <h2 mat-dialog-title class="flex items-center gap-2">
   <mat-icon>payments</mat-icon>
-  Record Payment — {{ data.invoiceNumber }}
+  Record Payment — {{ data.customerName }}
 </h2>
 
 <form [formGroup]="form" (ngSubmit)="submit()">
   <mat-dialog-content class="flex flex-col gap-3 !pt-1">
     @if (loadingOutstanding()) {
-      <p class="text-sm opacity-60">Loading outstanding balance…</p>
-    } @else {
-      <p class="text-sm opacity-70">Outstanding balance: <span class="font-medium">{{ outstandingBalance() | currency: 'INR' }}</span></p>
+      <p class="text-sm opacity-60">Loading outstanding bills…</p>
+    } @else if (outstanding(); as o) {
+      @if (o.bills.length === 0) {
+        <p class="text-sm opacity-70">This customer has no outstanding bills — nothing to collect.</p>
+      } @else {
+        <p class="text-sm opacity-70">
+          Total outstanding: <span class="font-medium">{{ o.totalOutstanding | currency: 'INR' }}</span>
+        </p>
+        <div class="flex flex-col gap-1 rounded-lg border p-2 text-xs" style="border-color: var(--mat-sys-outline-variant)">
+          <p class="mb-1 opacity-60">Applied oldest-first to:</p>
+          @for (bill of o.bills; track bill.invoiceId) {
+            <div class="flex items-center justify-between">
+              <span>{{ bill.invoiceNumber }} <span class="opacity-60">({{ bill.createdAt | date: 'mediumDate' }})</span></span>
+              <span class="font-medium">{{ bill.outstandingAmount | currency: 'INR' }}</span>
+            </div>
+          }
+        </div>
+      }
     }
 
     <mat-form-field appearance="outline">
@@ -31,7 +46,7 @@
       </mat-button-toggle-group>
       @if (form.controls.method.value === 'CREDIT') {
         <p class="mt-2 text-xs opacity-70">
-          Recorded as Pending — the bill won't be marked paid until you confirm this payment later.
+          Recorded as Pending on every bill it applies to — those bills won't be marked paid until you confirm this payment later.
         </p>
       }
     </div>
@@ -51,7 +66,12 @@
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" (click)="cancel()">Cancel</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="submitting() || loadingOutstanding()">
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="submitting() || loadingOutstanding() || (outstanding()?.bills?.length ?? 0) === 0"
+    >
       {{ submitting() ? 'Saving…' : 'Record Payment' }}
     </button>
   </mat-dialog-actions>

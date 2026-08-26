@@ -267,16 +267,15 @@ export class BillCreate {
       .create(request)
       .pipe(
         switchMap((bill) => this.billService.finalize(bill.id).pipe(switchMap(() => of(bill)))),
-        switchMap((bill) => {
-          // Credit sales are settled later from the Payments page — recording a
-          // full payment here immediately, right now would mark the bill PAID
-          // and defeat the whole point of "pay later" (see the Payments page's
-          // "OPEN bills awaiting payment" list, which this bill needs to stay in).
-          if (isCredit) return of(bill);
-          return this.billService
+        // Credit is now recorded as a PENDING payment on the backend (see
+        // PaymentService.record()) instead of being skipped here — it never
+        // marks the bill PAID, so the bill still stays OPEN and shows up on
+        // the Payments page as due, exactly like before.
+        switchMap((bill) =>
+          this.billService
             .recordPayment(bill.id, { amount: this.store.grandTotal(), method: this.store.paymentMethod() })
-            .pipe(switchMap(() => of(bill)));
-        }),
+            .pipe(switchMap(() => of(bill))),
+        ),
       )
       .subscribe({
         next: (bill) => {

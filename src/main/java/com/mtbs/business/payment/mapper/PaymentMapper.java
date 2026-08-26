@@ -13,6 +13,7 @@ public interface PaymentMapper {
     @Mapping(target = "amount", source = "amount")
     @Mapping(target = "currency", source = "currency")
     @Mapping(target = "method", source = "method")
+    @Mapping(target = "status", source = "status")
     @Mapping(target = "notes", source = "notes")
     @Mapping(target = "paidAt", source = "paidAt")
     @Mapping(target = "createdAt", source = "createdAt")

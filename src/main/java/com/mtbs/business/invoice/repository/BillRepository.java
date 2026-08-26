@@ -2,9 +2,11 @@ package com.mtbs.business.invoice.repository;
 
 import com.mtbs.business.invoice.entity.Bill;
 import com.mtbs.shared.enums.bill.InvoiceStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -50,6 +52,47 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
      * Example: findAllByCustomerIdAndStatusNot(id, InvoiceStatus.VOID)
      */
     List<Bill> findAllByCustomerIdAndStatusNot(Long customerId, InvoiceStatus status);
+
+    // ── Customer-level FIFO payment allocation ────────────────────────────────
+
+    /**
+     * A customer's bills in a given status, oldest-first ("First-In") by
+     * creation order, tiebroken by id. This is the FIFO ordering key: the
+     * first bill created is the first one a customer-level payment settles.
+     * Read-only variant (no lock) — used for previewing how a payment would
+     * apply (GET .../customer/{id}/outstanding), where no allocation happens.
+     */
+    List<Bill> findAllByCustomerIdAndStatusOrderByCreatedAtAscIdAsc(Long customerId, InvoiceStatus status);
+
+    /**
+     * Same as above, but takes a PESSIMISTIC_WRITE row lock on every
+     * returned bill for the duration of the caller's transaction — the
+     * house pattern for "read current value(s), decide, write them back"
+     * (see NumberSeriesRepository.findBySeriesTypeAndIsActiveTrueForUpdate).
+     * Required so PaymentService.recordForCustomer()'s FIFO allocation loop
+     * can't race a concurrent payment (old single-invoice or another FIFO
+     * call) touching one of the same bills.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT i FROM Bill i
+        WHERE i.customerId = :customerId
+          AND i.status     = :status
+        ORDER BY i.createdAt ASC, i.id ASC
+        """)
+    List<Bill> findAllByCustomerIdAndStatusForUpdate(
+            @Param("customerId") Long customerId,
+            @Param("status")     InvoiceStatus status
+    );
+
+    /**
+     * Single-bill PESSIMISTIC_WRITE lock — used by PaymentService.record()
+     * (the existing single-invoice flow) so it can't race a concurrent
+     * customer-level FIFO payment touching the same bill.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Bill i WHERE i.id = :id")
+    Optional<Bill> findByIdForUpdate(@Param("id") Long id);
 
     // ── Outstanding report queries ────────────────────────────────────────────
 

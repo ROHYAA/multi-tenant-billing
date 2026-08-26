@@ -10,6 +10,9 @@ import { ApiError } from '../../../core/models/api-response.model';
 import { AuthService } from '../../../core/auth/auth';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { CustomerOutstanding } from '../../payments/payment.model';
+import { PaymentService } from '../../payments/payment.service';
+import { RecordCustomerPaymentDialog } from '../../payments/record-customer-payment-dialog/record-customer-payment-dialog';
 import { CustomerFinancialSummary, Customer } from '../customer.model';
 import { CustomerService } from '../customer.service';
 import { CustomerFormDialog } from '../customer-form-dialog/customer-form-dialog';
@@ -23,6 +26,7 @@ export class CustomerDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly customerService = inject(CustomerService);
+  private readonly paymentService = inject(PaymentService);
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly confirmDialogService = inject(ConfirmDialogService);
@@ -32,6 +36,7 @@ export class CustomerDetail {
 
   protected readonly customer = signal<Customer | null>(null);
   protected readonly summary = signal<CustomerFinancialSummary | null>(null);
+  protected readonly outstanding = signal<CustomerOutstanding | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -58,7 +63,27 @@ export class CustomerDetail {
 
     if (this.canViewBilling) {
       this.customerService.getFinancialSummary(this.customerId).subscribe((summary) => this.summary.set(summary));
+      this.loadOutstanding();
     }
+  }
+
+  private loadOutstanding(): void {
+    this.paymentService.getCustomerOutstanding(this.customerId).subscribe((outstanding) => this.outstanding.set(outstanding));
+  }
+
+  recordPayment(): void {
+    const customer = this.customer();
+    if (!customer) return;
+
+    this.dialog
+      .open(RecordCustomerPaymentDialog, { width: '480px', data: { customerId: customer.id, customerName: customer.name } })
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) return;
+        this.snackBar.open('Payment recorded successfully', 'Dismiss', { duration: 4000 });
+        this.loadOutstanding();
+        this.customerService.getFinancialSummary(this.customerId).subscribe((summary) => this.summary.set(summary));
+      });
   }
 
   editCustomer(): void {

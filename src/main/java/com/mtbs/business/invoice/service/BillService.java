@@ -22,6 +22,8 @@ import com.mtbs.shared.event.outbox.OutboxEventPublisher;
 import com.mtbs.shared.exception.ResourceException;
 import com.mtbs.business.invoice.repository.BillItemRepository;
 import com.mtbs.business.invoice.repository.BillRepository;
+import com.mtbs.business.payment.repository.PaymentRepository;
+import com.mtbs.shared.enums.bill.PaymentStatus;
 import com.mtbs.tenant.service.ShopService;
 import com.mtbs.tenant.numbering.enums.NumberSeriesType;
 import com.mtbs.tenant.numbering.service.NumberSeriesService;
@@ -78,6 +80,7 @@ public class BillService {
 
     private final BillRepository invoiceRepository;
     private final BillItemRepository itemRepository;
+    private final PaymentRepository paymentRepository;
     private final CustomerService customerService;
     private final ProductService productService;
     private final ShopService tenantService;
@@ -255,6 +258,11 @@ public class BillService {
         if (invoice.getStatus() == InvoiceStatus.VOID) {
             throw ResourceException.invalid("Invoice is already voided.");
         }
+        if (paymentRepository.existsByInvoiceIdAndStatus(invoiceId, PaymentStatus.PENDING)) {
+            throw ResourceException.invalid(
+                "Cannot void an invoice with a pending credit payment against it. "
+                    + "Wait for it to be confirmed or collected differently first.");
+        }
 
         invoice.setStatus(InvoiceStatus.VOID);
         Bill saved = invoiceRepository.save(invoice);
@@ -282,10 +290,16 @@ public class BillService {
     /**
      * Transitions invoice to PAID. Called by PaymentService when
      * total payments collected >= invoice.totalAmount.
+     * Idempotent — a no-op if already PAID, now that both the single-invoice
+     * record() path and the customer-level FIFO allocator can reach here.
      */
     @Transactional
     public void markPaid(Long invoiceId) {
         Bill invoice = findOrThrow(invoiceId);
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            log.info("Invoice already PAID, skipping — id={}", invoiceId);
+            return;
+        }
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaidAt(Instant.now());
         invoiceRepository.save(invoice);
@@ -299,6 +313,38 @@ public class BillService {
     @Transactional(readOnly = true)
     public Bill getEntityById(Long invoiceId) {
         return findOrThrow(invoiceId);
+    }
+
+    /**
+     * Same as getEntityById, but takes a PESSIMISTIC_WRITE row lock held
+     * for the caller's transaction — used by PaymentService.record() (the
+     * single-invoice flow) so it can't race a concurrent customer-level
+     * FIFO payment touching the same bill.
+     */
+    @Transactional
+    public Bill getEntityByIdForUpdate(Long invoiceId) {
+        return invoiceRepository.findByIdForUpdate(invoiceId)
+                .orElseThrow(() -> ResourceException.notFound("Bill", invoiceId));
+    }
+
+    /**
+     * A customer's OPEN bills, oldest-first (FIFO order), each row locked
+     * for the duration of the caller's transaction — used by
+     * PaymentService.recordForCustomer() to allocate one payment across
+     * multiple bills without racing a concurrent payment on any of them.
+     */
+    @Transactional
+    public List<Bill> getOpenBillsForCustomerForUpdate(Long customerId) {
+        return invoiceRepository.findAllByCustomerIdAndStatusForUpdate(customerId, InvoiceStatus.OPEN);
+    }
+
+    /**
+     * Same as above, without locking — used by the read-only
+     * customer-outstanding preview endpoint, which doesn't allocate anything.
+     */
+    @Transactional(readOnly = true)
+    public List<Bill> getOpenBillsForCustomer(Long customerId) {
+        return invoiceRepository.findAllByCustomerIdAndStatusOrderByCreatedAtAscIdAsc(customerId, InvoiceStatus.OPEN);
     }
 
     // ── Financials calculation ────────────────────────────────────────────────

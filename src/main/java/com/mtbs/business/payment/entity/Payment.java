@@ -2,6 +2,7 @@ package com.mtbs.business.payment.entity;
 
 import com.mtbs.shared.entity.AuditableEntity;
 import com.mtbs.shared.enums.bill.PaymentMethod;
+import com.mtbs.shared.enums.bill.PaymentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +18,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * A payment received from a customer against a Bill.
@@ -31,6 +33,10 @@ import java.time.Instant;
  *
  * All payments are recorded manually (cash/card/UPI/bank transfer at the
  * counter) — notes field carries any reference (UTR, cheque number, etc.).
+ *
+ * Credit payments (method = CREDIT) are inserted PENDING — see
+ * PaymentStatus — and only count toward the invoice's outstanding balance
+ * once confirmed.
  */
 @Entity
 @Table(name = "payments")
@@ -78,4 +84,24 @@ public class Payment extends AuditableEntity {
      */
     @Column(name = "paid_at", nullable = false)
     private Instant paidAt;
+
+    /**
+     * PENDING for a Credit payment (a promise, not collected cash) until
+     * confirmPayment() flips it to CONFIRMED. Every other method is
+     * CONFIRMED on insert. Only CONFIRMED payments count toward an
+     * invoice's outstanding balance.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private PaymentStatus status = PaymentStatus.CONFIRMED;
+
+    /**
+     * Set only when this row was one of several created by a single
+     * customer-level FIFO payment (PaymentService.recordForCustomer) that
+     * spanned multiple bills — lets those rows be displayed/receipted
+     * together. Null for an ordinary single-invoice payment.
+     */
+    @Column(name = "payment_group_id")
+    private UUID paymentGroupId;
 }

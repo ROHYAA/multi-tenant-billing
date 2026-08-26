@@ -1,6 +1,7 @@
 package com.mtbs.business.payment.repository;
 
 import com.mtbs.business.payment.entity.Payment;
+import com.mtbs.shared.enums.bill.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,7 +24,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findAllByInvoiceId(Long invoiceId);
 
     /**
-     * Total amount collected for a specific invoice.
+     * Total CONFIRMED amount collected for a specific invoice — PENDING
+     * (credit-promise) payments do not count as collected.
      * Used by PaymentService to:
      *   1. Validate new payment doesn't exceed outstanding balance
      *   2. Check whether invoice is now fully paid
@@ -33,13 +35,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         SELECT COALESCE(SUM(p.amount), 0)
         FROM Payment p
         WHERE p.invoiceId = :invoiceId
+          AND p.status    = com.mtbs.shared.enums.bill.PaymentStatus.CONFIRMED
         """)
     BigDecimal sumAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
+
+    /**
+     * True if this invoice has any PENDING (unconfirmed credit) payment
+     * against it. Used by BillService.voidInvoice() to block voiding a
+     * bill that still has a credit promise outstanding against it.
+     */
+    boolean existsByInvoiceIdAndStatus(Long invoiceId, PaymentStatus status);
 
     // ── Report queries ────────────────────────────────────────────────────────
 
     /**
-     * Total revenue collected across all invoices within a date range.
+     * Total CONFIRMED revenue collected across all invoices within a date
+     * range — a PENDING credit payment is a promise, not collected cash,
+     * so it must not inflate reported revenue until confirmed.
      * Revenue is measured by paid_at (actual payment date), not createdAt.
      * Used by ReportService.getRevenueReport().
      * COALESCE returns 0 when no payments fall in the period.
@@ -49,6 +61,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         FROM Payment p
         WHERE p.paidAt >= :from
           AND p.paidAt <= :to
+          AND p.status  = com.mtbs.shared.enums.bill.PaymentStatus.CONFIRMED
         """)
     BigDecimal sumPaymentsInPeriod(
             @Param("from") Instant from,
@@ -56,21 +69,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     );
 
     /**
-     * Revenue broken down by payment method within a date range.
-     * Returns one row per method: [methodString, totalAmount].
+     * CONFIRMED revenue broken down by payment method within a date range.
+     * Returns one row per method: [methodString, totalAmount]. A method's
+     * PENDING (credit) amount is excluded — it isn't collected revenue yet.
      * Used by ReportService.getRevenueReport() for the method breakdown.
      *
      * Result rows are Object[] where:
      *   row[0] = String (PaymentMethod enum name, e.g. "UPI")
      *   row[1] = BigDecimal (total amount for that method)
      *
-     * Only methods with at least one payment in the period are returned.
+     * Only methods with at least one CONFIRMED payment in the period are returned.
      */
     @Query("""
         SELECT p.method, COALESCE(SUM(p.amount), 0)
         FROM Payment p
         WHERE p.paidAt >= :from
           AND p.paidAt <= :to
+          AND p.status  = com.mtbs.shared.enums.bill.PaymentStatus.CONFIRMED
         GROUP BY p.method
         """)
     List<Object[]> sumByMethodInPeriod(

@@ -76,11 +76,36 @@
                   <dd class="font-medium">{{ s.lastTransactionAt ? (s.lastTransactionAt | date: 'mediumDate') : '—' }}</dd>
                 </div>
               </dl>
+              <button mat-flat-button color="primary" class="mt-4 w-full" (click)="recordPayment()">
+                <mat-icon>payments</mat-icon>
+                Record Payment
+              </button>
             } @else {
               <p class="text-sm opacity-60">Loading…</p>
             }
           </mat-card-content>
         </mat-card>
+
+        @if (outstanding(); as o) {
+          @if (o.bills.length > 0) {
+            <mat-card appearance="outlined">
+              <mat-card-header>
+                <mat-card-title class="!text-base">Outstanding Bills</mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="!pt-2">
+                <p class="mb-2 text-xs opacity-60">Oldest-first — a recorded payment applies to these in this order.</p>
+                <dl class="flex flex-col gap-2">
+                  @for (bill of o.bills; track bill.invoiceId) {
+                    <div class="flex items-center justify-between text-sm">
+                      <dt>{{ bill.invoiceNumber }} <span class="opacity-60">({{ bill.createdAt | date: 'mediumDate' }})</span></dt>
+                      <dd class="font-medium">{{ bill.outstandingAmount | currency: 'INR' }}</dd>
+                    </div>
+                  }
+                </dl>
+              </mat-card-content>
+            </mat-card>
+          }
+        }
       } @else {
         <mat-card appearance="outlined">
           <mat-card-content class="!pt-4 text-sm opacity-60">
