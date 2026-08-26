@@ -3,7 +3,7 @@
   "short_name": "ShopLedger",
   "description": "Simple, fast billing for local shops",
   "display": "standalone",
-  "theme_color": "#1e40af",
+  "theme_color": "#0b2c52",
   "background_color": "#ffffff",
   "scope": "./",
   "start_url": "./",

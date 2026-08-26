@@ -10,6 +10,6 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class NotificationProperties {
-    private String fromAddress = "noreply@mtbs.com";
-    private String fromName = "MTBS Platform";
+    private String fromAddress = "noreply@shopledger.app";
+    private String fromName = "ShopLedger";
 }

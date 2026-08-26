@@ -113,7 +113,7 @@ app:
     secure: false
   mail:
     from-address: ${MAIL_FROM_ADDRESS}
-    from-name: MTBS Platform
+    from-name: ShopLedger
   frontend-url: ${FRONTEND_URL}
   password-reset:
     token-ttl-minutes: 15

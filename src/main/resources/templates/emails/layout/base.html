@@ -11,10 +11,13 @@
         .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff;
                    border-radius: 8px; overflow: hidden;
                    box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .header { background: #1e293b; padding: 28px 40px; text-align: center; }
-        .header .logo { color: #ffffff; font-size: 22px; font-weight: 700;
-                        letter-spacing: -0.5px; }
-        .header .logo span { color: #6366f1; }
+        .header { background: #ffffff; padding: 24px 40px; text-align: center;
+                  border-bottom: 1px solid #e5e7eb; }
+        .header .logo { color: #0b2c52; font-size: 22px; font-weight: 700;
+                         letter-spacing: -0.5px; }
+        .header .logo img { height: 32px; width: 32px; vertical-align: middle;
+                             margin-right: 8px; }
+        .header .logo span { color: #0a9156; }
         .body { padding: 40px; }
         .greeting { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #111827; }
         .text { font-size: 15px; line-height: 1.7; color: #374151; margin-bottom: 16px; }
@@ -51,7 +54,9 @@
 <body>
 <div class="wrapper">
     <div class="header">
-        <div class="logo">MT<span>BS</span> Platform</div>
+        <div class="logo">
+            <img th:src="|${frontendUrl}/assets/logo/shopledger-mark-192.png|" alt="ShopLedger" />Shop<span>Ledger</span>
+        </div>
     </div>
     <div class="body">
         <th:block th:replace="${content}"/>
@@ -59,9 +64,9 @@
     <div class="footer">
         <p>
             You're receiving this email because you have an account on
-            <strong th:text="${companyName}">MTBS Platform</strong>.<br/>
+            <strong th:text="${companyName}">ShopLedger</strong>.<br/>
             &copy; <span th:text="${currentYear}">2025</span>
-            <span th:text="${companyName}">MTBS</span>. All rights reserved.<br/>
+            <span th:text="${companyName}">ShopLedger</span>. All rights reserved.<br/>
             <a th:href="${frontendUrl}">Visit Dashboard</a>
         </p>
     </div>
