@@ -182,13 +182,18 @@
         <mat-button-toggle [value]="method.value" class="flex-1">{{ method.label }}</mat-button-toggle>
       }
     </mat-button-toggle-group>
+    @if (store.paymentMethod() === 'CREDIT') {
+      <p class="mt-2 text-xs opacity-70">
+        No payment is collected now — this bill stays open on the Payments page until you record what the customer actually pays later.
+      </p>
+    }
   </section>
 
   <!-- Actions -->
   <section class="flex gap-2">
     @if (!savedBillId()) {
       <button mat-flat-button color="primary" class="!h-11 flex-1" [disabled]="submitting()" (click)="save()">
-        {{ submitting() ? 'Saving…' : 'Save' }}
+        {{ submitting() ? 'Saving…' : store.paymentMethod() === 'CREDIT' ? 'Save as Due' : 'Save' }}
       </button>
     } @else {
       <button mat-stroked-button class="!h-11 flex-1" [disabled]="printing()" (click)="print()">

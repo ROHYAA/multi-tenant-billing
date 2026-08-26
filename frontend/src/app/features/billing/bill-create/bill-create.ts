@@ -260,22 +260,35 @@ export class BillCreate {
       }),
     };
 
+    const isCredit = this.store.paymentMethod() === 'CREDIT';
+
     this.submitting.set(true);
     this.billService
       .create(request)
       .pipe(
         switchMap((bill) => this.billService.finalize(bill.id).pipe(switchMap(() => of(bill)))),
-        switchMap((bill) =>
-          this.billService
+        switchMap((bill) => {
+          // Credit sales are settled later from the Payments page — recording a
+          // full payment here immediately, right now would mark the bill PAID
+          // and defeat the whole point of "pay later" (see the Payments page's
+          // "OPEN bills awaiting payment" list, which this bill needs to stay in).
+          if (isCredit) return of(bill);
+          return this.billService
             .recordPayment(bill.id, { amount: this.store.grandTotal(), method: this.store.paymentMethod() })
-            .pipe(switchMap(() => of(bill))),
-        ),
+            .pipe(switchMap(() => of(bill)));
+        }),
       )
       .subscribe({
         next: (bill) => {
           this.submitting.set(false);
           this.savedBillId.set(bill.id);
-          this.snackBar.open(`Bill ${bill.invoiceNumber} saved successfully`, 'Dismiss', { duration: 5000 });
+          this.snackBar.open(
+            isCredit
+              ? `Bill ${bill.invoiceNumber} saved — due for collection later (see Payments).`
+              : `Bill ${bill.invoiceNumber} saved successfully`,
+            'Dismiss',
+            { duration: 5000 },
+          );
         },
         error: (err: ApiError) => {
           this.submitting.set(false);
