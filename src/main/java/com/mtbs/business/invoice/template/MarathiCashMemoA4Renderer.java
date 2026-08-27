@@ -341,7 +341,10 @@ public class MarathiCashMemoA4Renderer implements BillTemplateRenderer {
 
     private void addPaymentModeAndQr(Document document, Bill invoice, ShopSettings settings, BillRenderOptions options,
                                       PdfDocument pdfDoc, PdfFont bold, PdfFont regular, float baseFontSize) {
+        // A PENDING credit payment is a promise, not collected cash — don't
+        // highlight its method chip as if it were actually paid.
         Set<PaymentMethod> usedMethods = options.payments().stream()
+                .filter(p -> p.getStatus() == com.mtbs.shared.enums.bill.PaymentStatus.CONFIRMED)
                 .map(Payment::getMethod)
                 .collect(Collectors.toSet());
 
