@@ -11,6 +11,7 @@ import com.mtbs.tenant.attachment.repository.AttachmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -69,12 +70,35 @@ public class AttachmentService {
         return toResponse(saved);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * REQUIRES_NEW for the same reason as getFileBytes() below — this is also
+     * called from ShopSettingsService.resolveAttachmentUrl(), another
+     * soft-fail context (a dangling logo/signature reference shouldn't break
+     * the whole settings page) that would otherwise have the same
+     * UnexpectedRollbackException exposure. Safe for every other caller too
+     * (AttachmentController, the validating checks in applyBusinessInformation
+     * below) — it's a pure read either way, just now on its own connection.
+     */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public AttachmentResponse getById(Long id) {
         return toResponse(findOrThrow(id));
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * REQUIRES_NEW, deliberately — this is called from
+     * BillRenderSupport.loadImage() inside PDF generation's own read-only
+     * transaction, which soft-fails a missing/unreadable attachment (a bill
+     * should still print without its logo, not fail outright). But a plain
+     * participating (REQUIRED) transaction here would still mark that
+     * *shared* ambient transaction rollback-only the moment findOrThrow()
+     * throws for a stale attachment reference — the caller's soft-fail catch
+     * swallows the exception and PDF generation appears to succeed, but the
+     * outer transaction then fails to commit with an UnexpectedRollbackException
+     * that surfaces as a bare 500, with no trace of the real cause. A fresh,
+     * isolated transaction here fails and rolls back entirely on its own,
+     * leaving the caller's transaction untouched either way.
+     */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public byte[] getFileBytes(Long id) {
         Attachment attachment = findOrThrow(id);
         return storagePort.retrieve(attachment.getStorageKey());

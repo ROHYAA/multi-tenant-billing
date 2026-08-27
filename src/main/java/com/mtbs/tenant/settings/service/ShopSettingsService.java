@@ -147,12 +147,8 @@ public class ShopSettingsService {
     }
 
     private ShopSettingsResponse toResponse(ShopSettings settings) {
-        String logoUrl = settings.getLogoAttachmentId() != null
-                ? attachmentService.getById(settings.getLogoAttachmentId()).getUrl()
-                : null;
-        String signatureUrl = settings.getSignatureAttachmentId() != null
-                ? attachmentService.getById(settings.getSignatureAttachmentId()).getUrl()
-                : null;
+        String logoUrl = resolveAttachmentUrl(settings.getLogoAttachmentId());
+        String signatureUrl = resolveAttachmentUrl(settings.getSignatureAttachmentId());
 
         return ShopSettingsResponse.builder()
                 .businessName(settings.getBusinessName())
@@ -197,5 +193,26 @@ public class ShopSettingsService {
                 .margin(settings.getMargin())
                 .fontSize(settings.getFontSize())
                 .build();
+    }
+
+    /**
+     * Same "fail soft, never break the page over it" logic as
+     * BillRenderSupport.loadImage() — a logo/signature can end up dangling
+     * if the attachment was deleted without clearing this settings row's
+     * reference to it (AttachmentService.delete() doesn't check for or
+     * clear back-references). Showing settings with a missing logo URL is
+     * always better than the whole settings page failing to load at all.
+     */
+    private String resolveAttachmentUrl(Long attachmentId) {
+        if (attachmentId == null) {
+            return null;
+        }
+        try {
+            return attachmentService.getById(attachmentId).getUrl();
+        } catch (Exception e) {
+            log.warn("Could not resolve attachment id={} for shop settings — leaving its URL null: {}",
+                    attachmentId, e.getMessage());
+            return null;
+        }
     }
 }

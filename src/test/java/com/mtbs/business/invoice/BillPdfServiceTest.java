@@ -164,6 +164,40 @@ class BillPdfServiceTest {
     }
 
     @Nested
+    @DisplayName("Dangling attachment reference")
+    class DanglingAttachmentTests {
+
+        @Test
+        @DisplayName("a logoAttachmentId left pointing at a since-deleted attachment still produces a PDF, "
+                + "not an UnexpectedRollbackException")
+        void generatePdf_danglingLogoAttachment_stillSucceeds() throws Exception {
+            // Reproduces the exact production bug. updateSettings() validates the
+            // attachment exists at set-time (ShopSettingsService.applyLogo — "throws
+            // if not found"), so a dangling reference can only arise the way it
+            // really did: the logo was valid when set, then deleted afterward —
+            // AttachmentService.delete() doesn't clear ShopSettings' back-reference.
+            //
+            // AttachmentService.getFileBytes() throwing for that now-stale reference
+            // used to mark the *shared* ambient read-only transaction rollback-only
+            // even though BillRenderSupport.loadImage() swallows the exception and
+            // PDF generation appears to succeed — generatePdf() would then fail to
+            // commit with an UnexpectedRollbackException on return, surfacing as a
+            // bare 500 with no trace of the real cause. getFileBytes() now runs in
+            // its own REQUIRES_NEW transaction specifically so this can't happen.
+            Long danglingLogoId = shopSettingsService.getSettings().getLogoAttachmentId();
+            attachmentService.delete(danglingLogoId);
+
+            byte[] pdf = assertDoesNotThrow(() -> billPdfService.generatePdf(billId, BillRenderOptions.NONE));
+
+            assertTrue(pdf.length > 0);
+            try (PdfDocument doc = new PdfDocument(new PdfReader(new ByteArrayInputStream(pdf)))) {
+                String text = PdfTextExtractor.getTextFromPage(doc.getPage(1));
+                assertTrue(text.contains("Print Test Shop"), "PDF should still render fully, just without the logo");
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("Thermal paper sizes")
     class ThermalTests {
 
