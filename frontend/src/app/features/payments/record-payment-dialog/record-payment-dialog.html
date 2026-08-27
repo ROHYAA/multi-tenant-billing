@@ -4,7 +4,7 @@
 </h2>
 
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <mat-dialog-content class="flex flex-col gap-3 !pt-1">
+  <mat-dialog-content class="flex flex-col gap-4 !pt-1">
     @if (loadingOutstanding()) {
       <p class="text-sm opacity-60">Loading outstanding balance…</p>
     } @else {
@@ -24,11 +24,11 @@
 
     <div>
       <label class="mb-1 block text-sm opacity-70">Payment Mode</label>
-      <mat-button-toggle-group formControlName="method" class="w-full flex-wrap">
+      <mat-chip-listbox formControlName="method" aria-label="Payment mode">
         @for (m of paymentMethods; track m.value) {
-          <mat-button-toggle [value]="m.value">{{ m.label }}</mat-button-toggle>
+          <mat-chip-option [value]="m.value">{{ m.label }}</mat-chip-option>
         }
-      </mat-button-toggle-group>
+      </mat-chip-listbox>
       @if (form.controls.method.value === 'CREDIT') {
         <p class="mt-2 text-xs opacity-70">
           Recorded as Pending — the bill won't be marked paid until you confirm this payment later.

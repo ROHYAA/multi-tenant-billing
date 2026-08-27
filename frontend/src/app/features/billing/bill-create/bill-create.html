@@ -53,7 +53,7 @@
       }
     </mat-autocomplete>
 
-    <div class="mt-2 grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-end gap-2">
+    <div class="mt-2 grid grid-cols-2 items-end gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto_auto]">
       <mat-form-field appearance="outline">
         <mat-label>Qty</mat-label>
         <input matInput type="number" min="0.01" step="0.01" [value]="stagingQty()" (input)="stagingQty.set(+$any($event.target).value)" />
@@ -62,16 +62,16 @@
         <mat-label>Rate</mat-label>
         <input matInput type="number" min="0" step="0.01" [value]="stagingRate()" (input)="stagingRate.set(+$any($event.target).value)" />
       </mat-form-field>
-      <mat-form-field appearance="outline" class="w-20">
+      <mat-form-field appearance="outline" class="w-full sm:w-20">
         <mat-label>CGST %</mat-label>
         <input matInput type="number" min="0" step="0.01" [value]="stagingCgstPercentage()" (input)="stagingCgstPercentage.set(+$any($event.target).value)" />
       </mat-form-field>
-      <mat-form-field appearance="outline" class="w-20">
+      <mat-form-field appearance="outline" class="w-full sm:w-20">
         <mat-label>SGST %</mat-label>
         <input matInput type="number" min="0" step="0.01" [value]="stagingSgstPercentage()" (input)="stagingSgstPercentage.set(+$any($event.target).value)" />
       </mat-form-field>
-      <div class="mb-5 w-24 text-right text-sm opacity-80">{{ stagingAmount() | currency: 'INR' }}</div>
-      <button mat-flat-button color="primary" class="mb-1" (click)="addToCart()">
+      <div class="col-span-2 mb-5 text-right text-sm opacity-80 sm:col-span-1 sm:w-24">{{ stagingAmount() | currency: 'INR' }}</div>
+      <button mat-flat-button color="primary" class="col-span-2 mb-1 sm:col-span-1" (click)="addToCart()">
         <mat-icon>add</mat-icon>
         Add
       </button>
@@ -81,7 +81,7 @@
   <!-- Items list -->
   @if (store.items().length > 0) {
     <section class="flex flex-col gap-2">
-      <div class="flex items-center gap-2 px-3 text-xs opacity-60">
+      <div class="hidden items-center gap-2 px-3 text-xs opacity-60 sm:flex">
         <span class="flex-1">Item</span>
         <span class="w-16 text-right">Qty</span>
         <span class="w-20 text-right">Rate</span>
@@ -91,8 +91,10 @@
         <span class="w-10"></span>
       </div>
       @for (line of store.items(); track line.localId) {
-        <div class="flex items-center gap-2 rounded-lg border px-3 py-2" style="border-color: var(--mat-sys-outline-variant)">
-          <span class="flex-1 truncate text-sm">{{ line.description }}</span>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-lg border px-3 py-2" style="border-color: var(--mat-sys-outline-variant)">
+          <span class="w-full truncate text-sm sm:w-auto sm:flex-1">{{ line.description }}</span>
+
+          <label class="flex items-center gap-1 text-xs opacity-60 sm:sr-only">Qty</label>
           <input
             class="w-16 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
             style="border-color: var(--mat-sys-outline-variant)"
@@ -102,6 +104,7 @@
             [value]="line.quantity"
             (change)="updateItemQty(line.localId, $any($event.target).value)"
           />
+          <label class="flex items-center gap-1 text-xs opacity-60 sm:sr-only">Rate</label>
           <input
             class="w-20 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
             style="border-color: var(--mat-sys-outline-variant)"
@@ -111,6 +114,7 @@
             [value]="line.unitPrice"
             (change)="updateItemRate(line.localId, $any($event.target).value)"
           />
+          <label class="flex items-center gap-1 text-xs opacity-60 sm:sr-only">CGST %</label>
           <input
             class="w-14 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
             style="border-color: var(--mat-sys-outline-variant)"
@@ -121,6 +125,7 @@
             [value]="line.cgstPercentage"
             (change)="updateItemCgst(line.localId, $any($event.target).value)"
           />
+          <label class="flex items-center gap-1 text-xs opacity-60 sm:sr-only">SGST %</label>
           <input
             class="w-14 rounded border bg-transparent px-1 py-0.5 text-right text-sm"
             style="border-color: var(--mat-sys-outline-variant)"
@@ -131,7 +136,7 @@
             [value]="line.sgstPercentage"
             (change)="updateItemSgst(line.localId, $any($event.target).value)"
           />
-          <span class="w-20 text-right text-sm font-medium">{{ line.quantity * line.unitPrice | currency: 'INR' }}</span>
+          <span class="ml-auto text-right text-sm font-medium sm:ml-0 sm:w-20">{{ line.quantity * line.unitPrice | currency: 'INR' }}</span>
           <button mat-icon-button (click)="removeItem(line.localId)" aria-label="Remove item">
             <mat-icon>delete_outline</mat-icon>
           </button>
@@ -177,11 +182,11 @@
   <!-- Payment -->
   <section>
     <h2 class="mb-2 text-sm font-semibold opacity-70">Payment</h2>
-    <mat-button-toggle-group [value]="store.paymentMethod()" (change)="selectPaymentMethod($event.value)" class="w-full">
+    <mat-chip-listbox [value]="store.paymentMethod()" (change)="selectPaymentMethod($event.value)" aria-label="Payment mode">
       @for (method of paymentMethods; track method.value) {
-        <mat-button-toggle [value]="method.value" class="flex-1">{{ method.label }}</mat-button-toggle>
+        <mat-chip-option [value]="method.value">{{ method.label }}</mat-chip-option>
       }
-    </mat-button-toggle-group>
+    </mat-chip-listbox>
     @if (store.paymentMethod() === 'CREDIT') {
       <p class="mt-2 text-xs opacity-70">
         No payment is collected now — this bill stays open on the Payments page until you record what the customer actually pays later.

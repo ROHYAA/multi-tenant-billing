@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,7 +25,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CASH', label: 'Cash' },
   { value: 'UPI', label: 'UPI' },
   { value: 'CARD', label: 'Card' },
-  { value: 'CREDIT', label: 'Credit' },
+  { value: 'CREDIT', label: 'Pay Later' },
 ];
 
 @Component({
@@ -36,7 +36,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
     CurrencyPipe,
     MatAutocompleteModule,
     MatButtonModule,
-    MatButtonToggleModule,
+    MatChipsModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
