@@ -51,28 +51,45 @@ public class BillPdfService {
 
     @Transactional(readOnly = true)
     public byte[] generatePdf(Long invoiceId, BillRenderOptions options) {
-        Bill invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> ResourceException.notFound("Bill", invoiceId));
+        // Wrapped end-to-end: a raw JDBC/Hibernate failure here (e.g. this
+        // tenant's schema missing a column a recent migration was supposed
+        // to add) would otherwise fall through uncaught to the generic 500
+        // handler, which deliberately hides the real exception from the
+        // client — making this endpoint impossible to diagnose from the
+        // browser/API response alone. Surfacing the real exception type and
+        // message here (still a 400, not a stack trace) is what actually
+        // lets a failure like that be identified without server-log access.
+        try {
+            Bill invoice = invoiceRepository.findById(invoiceId)
+                    .orElseThrow(() -> ResourceException.notFound("Bill", invoiceId));
 
-        List<BillItem> items = itemRepository.findAllByInvoiceId(invoiceId);
-        Customer customer = customerService.getEntityById(invoice.getCustomerId());
-        ShopSettings settings = shopSettingsService.getEntity();
-        BillTemplate template = billTemplateService.getEntityById(settings.getBillTemplateId());
+            List<BillItem> items = itemRepository.findAllByInvoiceId(invoiceId);
+            Customer customer = customerService.getEntityById(invoice.getCustomerId());
+            ShopSettings settings = shopSettingsService.getEntity();
+            BillTemplate template = billTemplateService.getEntityById(settings.getBillTemplateId());
 
-        String rendererKey = template.getCode() + ":" + settings.getPaperSize().name();
-        BillTemplateRenderer renderer = rendererRegistry.get(rendererKey);
+            String rendererKey = template.getCode() + ":" + settings.getPaperSize().name();
+            BillTemplateRenderer renderer = rendererRegistry.get(rendererKey);
 
-        // Payments are fetched here (not trusted from the caller-supplied options)
-        // so every renderer can show which method(s) a bill was actually paid
-        // with, without BillService/BillController needing to know about payments.
-        List<Payment> payments = paymentRepository.findAllByInvoiceId(invoiceId);
-        CopyType copyType = options != null ? options.copyType() : null;
-        BillRenderOptions effectiveOptions = new BillRenderOptions(copyType, payments);
+            // Payments are fetched here (not trusted from the caller-supplied options)
+            // so every renderer can show which method(s) a bill was actually paid
+            // with, without BillService/BillController needing to know about payments.
+            List<Payment> payments = paymentRepository.findAllByInvoiceId(invoiceId);
+            CopyType copyType = options != null ? options.copyType() : null;
+            BillRenderOptions effectiveOptions = new BillRenderOptions(copyType, payments);
 
-        log.info("Generating PDF for invoice={} using renderer={}", invoice.getInvoiceNumber(), rendererKey);
+            log.info("Generating PDF for invoice={} using renderer={}", invoice.getInvoiceNumber(), rendererKey);
 
-        byte[] pdf = renderer.render(invoice, items, customer, settings, effectiveOptions);
-        log.info("PDF generated — invoiceNumber={}, bytes={}", invoice.getInvoiceNumber(), pdf.length);
-        return pdf;
+            byte[] pdf = renderer.render(invoice, items, customer, settings, effectiveOptions);
+            log.info("PDF generated — invoiceNumber={}, bytes={}", invoice.getInvoiceNumber(), pdf.length);
+            return pdf;
+        } catch (ResourceException e) {
+            throw e; // already a clean, intentional error (not found / bad input) — pass through as-is
+        } catch (Exception e) {
+            log.error("PDF generation failed unexpectedly — invoiceId={}", invoiceId, e);
+            throw ResourceException.invalid(
+                    "PDF generation failed: " + e.getClass().getSimpleName()
+                            + (e.getMessage() != null ? " — " + e.getMessage() : ""));
+        }
     }
 }
