@@ -121,11 +121,22 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Uploaded file is too large", ErrorCode.RESOURCE_INVALID.getCode()));
     }
 
+    /**
+     * TODO before a real production launch: this includes the raw exception's
+     * class name and message in the response body, not just "An unexpected
+     * error occurred" — deliberately, while this app is still in active beta
+     * debugging and pulling a full stack trace out of Render's log UI has
+     * proven painful. It's still always a 500 with no stack trace, and the
+     * full exception is logged server-side either way — but this is more
+     * detail than a hardened production API should hand back to the client.
+     * Revert to the plain generic message once the app is past this stage.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
         log.error("Unexpected error", ex);
+        String detail = ex.getClass().getSimpleName() + (ex.getMessage() != null ? ": " + ex.getMessage() : "");
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred", ErrorCode.INTERNAL_ERROR.getCode()));
+                .body(ApiResponse.error("An unexpected error occurred (" + detail + ")", ErrorCode.INTERNAL_ERROR.getCode()));
     }
 }
