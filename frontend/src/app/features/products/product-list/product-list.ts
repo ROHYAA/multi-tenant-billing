@@ -51,6 +51,7 @@ export class ProductList {
 
   protected readonly columns: DataTableColumn<Product>[] = [
     { key: 'name', header: 'Name', sortable: true, cell: (p) => p.name },
+    { key: 'imei', header: 'IMEI', cell: (p) => p.imei || '—' },
     { key: 'unit', header: 'Unit', cell: (p) => p.unit || '—' },
     { key: 'price', header: 'Price', align: 'right', cell: (p) => this.formatCurrency(p.price) },
     { key: 'taxPercentage', header: 'Tax %', align: 'right', cell: (p) => `${p.taxPercentage}%` },

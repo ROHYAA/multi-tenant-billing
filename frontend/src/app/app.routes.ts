@@ -69,6 +69,23 @@ export const routes: Routes = [
         data: { title: 'Products', icon: 'inventory_2', permission: 'PRODUCT_MANAGE' },
       },
       {
+        path: 'used-phones',
+        canActivate: [permissionGuard],
+        data: { title: 'Used Phones', icon: 'phone_android', permission: 'PRODUCT_MANAGE' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/used-phones/used-phone-list/used-phone-list').then((m) => m.UsedPhoneList),
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./features/used-phones/used-phone-buy/used-phone-buy').then((m) => m.UsedPhoneBuy),
+          },
+        ],
+      },
+      {
         path: 'bills',
         canActivate: [permissionGuard],
         data: { title: 'Bills', icon: 'receipt_long', permission: 'BILLING_MANAGE' },
@@ -94,6 +111,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reports/reports-page/reports-page').then((m) => m.ReportsPage),
         canActivate: [permissionGuard],
         data: { title: 'Reports', icon: 'bar_chart', permission: 'BILLING_MANAGE' },
+      },
+      {
+        path: 'employees',
+        loadComponent: () => import('./features/staff/staff-list/staff-list').then((m) => m.StaffList),
+        canActivate: [permissionGuard],
+        data: { title: 'Employees', icon: 'badge', permission: 'USER_MANAGE' },
       },
       {
         path: 'shop-settings',

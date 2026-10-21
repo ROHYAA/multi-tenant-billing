@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../auth/auth';
+import { NativeSession } from '../auth/native-session';
 
 const AUTH_ENDPOINTS = [
   '/auth/login',
@@ -20,6 +21,7 @@ const AUTH_ENDPOINTS = [
   // Admin is a completely separate auth system (own cookies, own /admin/auth/*
   // endpoints) — a 401 here must never trigger a tenant-session refresh/redirect.
   '/admin/',
+  '/business-types',
 ];
 
 /**
@@ -36,9 +38,18 @@ const AUTH_ENDPOINTS = [
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const native = inject(NativeSession);
   const router = inject(Router);
 
-  const credentialedReq = req.clone({ withCredentials: true });
+  let headers = req.headers;
+  if (native.isNative()) {
+    headers = headers.set('X-ShopLedger-Client', 'capacitor');
+    const access = native.accessToken();
+    if (access) {
+      headers = headers.set('Authorization', `Bearer ${access}`);
+    }
+  }
+  const credentialedReq = req.clone({ withCredentials: true, headers });
   const isAuthEndpoint = AUTH_ENDPOINTS.some((endpoint) => req.url.includes(endpoint));
 
   return next(credentialedReq).pipe(

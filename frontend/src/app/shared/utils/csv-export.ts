@@ -1,3 +1,5 @@
+import { saveFile } from './file-output';
+
 /**
  * Client-side CSV export — builds a CSV from already-fetched data and
  * triggers a browser download. No backend endpoint needed: reports are
@@ -15,12 +17,8 @@ export function exportToCsv(filename: string, rows: Record<string, string | numb
   ];
 
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename.endsWith('.csv') ? filename : `${filename}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  // Browser download on the web; share sheet (save to Files/Drive/WhatsApp) in the Android app.
+  void saveFile(blob, filename.endsWith('.csv') ? filename : `${filename}.csv`, 'text/csv');
 }
 
 function escapeCsvCell(value: string | number | undefined): string {

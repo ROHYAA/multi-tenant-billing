@@ -4,6 +4,9 @@ export interface Product {
   name: string;
   price: number;
   taxPercentage: number;
+  imei?: string;
+  /** Set when this product is a second-hand phone bought in via Used Phones. */
+  usedPhonePurchaseId?: number | null;
   isActive: boolean;
 }
 
@@ -18,6 +21,7 @@ export interface CartLine {
   localId: string;
   productId: number | null;
   description: string;
+  imei?: string | null;
   quantity: number;
   unitPrice: number;
   cgstPercentage: number;
@@ -35,6 +39,7 @@ export interface CreateBillRequest {
   items: {
     productId?: number | null;
     description?: string;
+    imei?: string | null;
     quantity: number;
     unitPrice?: number;
     taxPercentage?: number;

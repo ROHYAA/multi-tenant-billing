@@ -20,6 +20,7 @@ import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { BillDraftStore } from '../bill-draft.store';
 import { CreateBillRequest, PaymentMethod, Product } from '../bill.model';
 import { BillService } from '../bill.service';
+import { printPdf, shareFile } from '../../../shared/utils/file-output';
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CASH', label: 'Cash' },
@@ -67,8 +68,9 @@ export class BillCreate {
     const term = this.productSearchText().trim().toLowerCase();
     if (!term) return [];
     const products = this.allProducts();
+    const digits = term.replace(/[\s-]/g, '');
     return products
-      .filter((p) => p.name.toLowerCase().includes(term))
+      .filter((p) => p.name.toLowerCase().includes(term) || (digits.length >= 4 && !!p.imei?.includes(digits)))
       .sort((a, b) => {
         const aStarts = a.name.toLowerCase().startsWith(term) ? 0 : 1;
         const bStarts = b.name.toLowerCase().startsWith(term) ? 0 : 1;
@@ -88,6 +90,7 @@ export class BillCreate {
   protected readonly loadingCatalog = signal(true);
   protected readonly submitting = signal(false);
   protected readonly savedBillId = signal<number | null>(null);
+  private readonly savedInvoiceNumber = signal<string | null>(null);
   protected readonly printing = signal(false);
 
   constructor() {
@@ -175,6 +178,7 @@ export class BillCreate {
     this.store.addItem({
       productId: product?.id ?? null,
       description,
+      imei: product?.imei ?? null,
       quantity: qty,
       unitPrice: rate,
       cgstPercentage: this.stagingCgstPercentage(),
@@ -238,6 +242,25 @@ export class BillCreate {
     }
 
     const products = this.allProducts();
+    const usedPhoneLines = this.store.items().filter((line) => {
+      const product = line.productId ? products.find((p) => p.id === line.productId) : undefined;
+      return !!product?.usedPhonePurchaseId || (!!line.imei && products.some((p) => p.usedPhonePurchaseId && p.imei === line.imei));
+    });
+    if (usedPhoneLines.length) {
+      if (customer.isWalkin || !customer.phone?.trim()) {
+        this.snackBar.open(
+          'Used phone sale: select or add the buyer with their name and mobile number (needed for your records).',
+          'Dismiss',
+          { duration: 7000 },
+        );
+        return;
+      }
+      if (usedPhoneLines.some((line) => line.quantity !== 1)) {
+        this.snackBar.open('Each used phone line must have quantity 1.', 'Dismiss', { duration: 5000 });
+        return;
+      }
+    }
+
     const request: CreateBillRequest = {
       customerId: customer.id,
       discountAmount: this.store.discountAmount(),
@@ -253,6 +276,7 @@ export class BillCreate {
           : {
               productId: null,
               description: line.description,
+              imei: line.imei || null,
               quantity: line.quantity,
               unitPrice: line.unitPrice,
               taxPercentage,
@@ -281,6 +305,7 @@ export class BillCreate {
         next: (bill) => {
           this.submitting.set(false);
           this.savedBillId.set(bill.id);
+          this.savedInvoiceNumber.set(bill.invoiceNumber);
           this.snackBar.open(
             isCredit
               ? `Bill ${bill.invoiceNumber} saved — due for collection later (see Payments).`
@@ -297,15 +322,25 @@ export class BillCreate {
   }
 
   print(): void {
+    this.withPdf((blob, fileName) => printPdf(blob, fileName));
+  }
+
+  share(): void {
+    this.withPdf((blob, fileName) => shareFile(blob, fileName));
+  }
+
+  private withPdf(action: (blob: Blob, fileName: string) => Promise<void>): void {
     const billId = this.savedBillId();
     if (!billId) return;
 
     this.printing.set(true);
     this.billService.downloadPdf(billId).subscribe({
       next: (blob) => {
-        this.printing.set(false);
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        action(blob, `${this.savedInvoiceNumber() ?? 'bill-' + billId}.pdf`)
+          .catch((err: unknown) =>
+            this.snackBar.open((err as Error)?.message || 'Could not open the PDF.', 'Dismiss', { duration: 6000 }),
+          )
+          .finally(() => this.printing.set(false));
       },
       error: (err: ApiError) => {
         this.printing.set(false);
@@ -317,6 +352,7 @@ export class BillCreate {
   startNewBill(): void {
     this.store.reset();
     this.savedBillId.set(null);
+    this.savedInvoiceNumber.set(null);
     this.customerService.getWalkIn().subscribe((customer) => this.store.setCustomer(customer));
   }
 }

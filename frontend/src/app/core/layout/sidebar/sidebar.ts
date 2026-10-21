@@ -16,9 +16,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
   { label: 'Customers', icon: 'people', route: '/customers', permission: 'CUSTOMER_MANAGE' },
   { label: 'Products', icon: 'inventory_2', route: '/products', permission: 'PRODUCT_MANAGE' },
+  { label: 'Used Phones', icon: 'phone_android', route: '/used-phones', permission: 'PRODUCT_MANAGE' },
   { label: 'Bills', icon: 'receipt_long', route: '/bills', permission: 'BILLING_MANAGE' },
   { label: 'Payments', icon: 'payments', route: '/payments', permission: 'BILLING_MANAGE' },
   { label: 'Reports', icon: 'bar_chart', route: '/reports', permission: 'BILLING_MANAGE' },
+  { label: 'Employees', icon: 'badge', route: '/employees', permission: 'USER_MANAGE' },
   { label: 'Shop Settings', icon: 'settings', route: '/shop-settings', permission: 'TENANT_MANAGE' },
 ];
 

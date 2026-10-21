@@ -30,6 +30,6 @@ export class BillService {
   }
 
   downloadPdf(billId: number, copyType?: 'ORIGINAL' | 'DUPLICATE' | 'TRIPLICATE'): Observable<Blob> {
-    return this.api.getBlob(`/business-invoices/${billId}/download`, copyType ? { copyType } : undefined);
+    return this.api.getPdf(`/business-invoices/${billId}/download`, copyType ? { copyType } : undefined);
   }
 }

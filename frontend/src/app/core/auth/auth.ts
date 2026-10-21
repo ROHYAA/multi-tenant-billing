@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { ApiClient } from '../api/api-client';
+import { NativeSession } from './native-session';
 import {
   AuthResponseDto,
   CurrentUser,
@@ -24,6 +25,7 @@ const TENANT_SLUG_KEY = 'shopledger.tenantSlug';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly api = inject(ApiClient);
+  private readonly native = inject(NativeSession);
 
   private readonly currentUserSignal = signal<CurrentUser | null>(null);
   private readonly resolvedSignal = signal(false);
@@ -44,6 +46,12 @@ export class AuthService {
     } else {
       localStorage.removeItem(TENANT_SLUG_KEY);
     }
+  }
+
+  /** App boot finished with no session (native APK with no stored tokens). */
+  markAnonymous(): void {
+    this.currentUserSignal.set(null);
+    this.resolvedSignal.set(true);
   }
 
   /**
@@ -77,15 +85,19 @@ export class AuthService {
     );
   }
 
-  /** Used by auth-interceptor on a 401 — refresh token comes from its own path-scoped cookie. */
+  /** Used by auth-interceptor on a 401 — refresh token comes from cookie (web) or JSON body (native). */
   refreshSession(): Observable<AuthResponseDto> {
-    return this.api.post<AuthResponseDto>('/auth/refresh', { tenantSlug: this.tenantSlug }).pipe(
+    const body = this.native.isNative()
+      ? { tenantSlug: this.tenantSlug, refreshToken: this.native.refreshToken() }
+      : { tenantSlug: this.tenantSlug };
+    return this.api.post<AuthResponseDto>('/auth/refresh', body).pipe(
       tap((dto) => this.applySession(dto)),
     );
   }
 
   logout(): Observable<void> {
-    return this.api.post<void>('/auth/logout', { refreshToken: '' }).pipe(
+    const refreshToken = this.native.isNative() ? (this.native.refreshToken() ?? '') : '';
+    return this.api.post<void>('/auth/logout', { refreshToken }).pipe(
       tap(() => this.clearSession()),
     );
   }
@@ -95,10 +107,12 @@ export class AuthService {
     this.currentUserSignal.set(null);
     this.tenantSlug = null;
     this.resolvedSignal.set(true);
+    void this.native.clear();
   }
 
   private applySession(dto: AuthResponseDto): void {
     this.currentUserSignal.set(toCurrentUser(dto));
     this.resolvedSignal.set(true);
+    void this.native.persist(dto.tokens);
   }
 }

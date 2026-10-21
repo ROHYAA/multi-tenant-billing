@@ -33,7 +33,8 @@
           <button mat-flat-button color="primary" [disabled]="busyId() === tenant.id" (click)="approve(tenant)">
             {{ busyId() === tenant.id ? 'Approving…' : 'Approve' }}
           </button>
-        } @else if (tenant.status === 'ACTIVE') {
+        }
+        @if (tenant.status === 'ACTIVE') {
           <button mat-stroked-button color="warn" [disabled]="busyId() === tenant.id" (click)="suspend(tenant)">
             {{ busyId() === tenant.id ? 'Suspending…' : 'Suspend' }}
           </button>

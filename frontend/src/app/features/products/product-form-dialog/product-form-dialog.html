@@ -39,10 +39,20 @@
       </mat-form-field>
     </div>
 
+    <mat-form-field appearance="outline">
+      <mat-label>IMEI (second-hand mobile)</mat-label>
+      <input matInput formControlName="imei" inputmode="numeric" maxlength="16" placeholder="15-digit IMEI" />
+      @if (form.controls.imei.hasError('pattern')) {
+        <mat-error>IMEI must be 14 to 16 digits</mat-error>
+      }
+      <mat-hint>Printed on the invoice. Leave blank for other goods.</mat-hint>
+    </mat-form-field>
+
     <div class="grid grid-cols-2 gap-3">
       <mat-form-field appearance="outline">
-        <mat-label>HSN/SAC Code</mat-label>
-        <input matInput formControlName="hsnSacCode" />
+        <mat-label>HSN/SAC (GST tax code)</mat-label>
+        <input matInput formControlName="hsnSacCode" placeholder="e.g. 8517" />
+        <mat-hint>GST classification — not the phone IMEI</mat-hint>
       </mat-form-field>
 
       <mat-form-field appearance="outline">

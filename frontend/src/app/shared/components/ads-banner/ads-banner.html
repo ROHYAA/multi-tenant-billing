@@ -1,0 +1,14 @@
+<div class="ads-banner" [class.ads-banner--native]="nativeClient">
+  @if (nativeClient) {
+    <div class="ads-banner__spacer" aria-hidden="true"></div>
+  } @else if (showAdsense) {
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      [attr.data-ad-client]="adsenseClient"
+      [attr.data-ad-slot]="adsenseSlot"
+      data-ad-format="horizontal"
+      data-full-width-responsive="true"
+    ></ins>
+  }
+</div>

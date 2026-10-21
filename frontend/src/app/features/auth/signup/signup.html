@@ -3,7 +3,11 @@
     <div class="mb-6 flex flex-col items-center gap-2 text-center">
       <img src="assets/logo/shopledger-mark-192.png" alt="ShopLedger" class="h-14 w-14" />
       <h1 class="text-xl font-semibold">Create your shop</h1>
-      <p class="text-sm opacity-70">Start billing in minutes — no setup wizard</p>
+      <p class="text-sm opacity-70">Free forever. You become the shop admin, then add employee logins inside the app.</p>
+    </div>
+
+    <div class="mb-4">
+      <app-pay-note />
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-1">
@@ -28,6 +32,17 @@
           <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
+
+      @if (businessTypes().length) {
+        <mat-form-field appearance="outline">
+          <mat-label>Business type</mat-label>
+          <mat-select formControlName="businessType">
+            @for (t of businessTypes(); track t.code) {
+              <mat-option [value]="t.code">{{ t.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
 
       <mat-form-field appearance="outline">
         <mat-label>Password</mat-label>

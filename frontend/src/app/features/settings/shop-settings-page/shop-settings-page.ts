@@ -8,20 +8,22 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError } from '../../../core/models/api-response.model';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
+import { AuthSrc } from '../../../shared/directives/auth-src';
 import { applyServerErrors, serverError } from '../../../shared/forms/server-errors';
-import { BillTemplate, BusinessType, PaperSize } from '../shop-settings.model';
+import { BillTemplate, BusinessTypeOption, PaperSize } from '../shop-settings.model';
 import { ShopSettingsService } from '../shop-settings.service';
 
-const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
-  { value: 'RETAIL', label: 'Retail' },
-  { value: 'WHOLESALE', label: 'Wholesale' },
-  { value: 'SERVICE', label: 'Service' },
-  { value: 'RESTAURANT', label: 'Restaurant' },
-  { value: 'PHARMACY', label: 'Pharmacy' },
-  { value: 'OTHER', label: 'Other' },
+/** Used when GET /business-types is missing (Java API until Laravel cutover). */
+const FALLBACK_BUSINESS_TYPES: BusinessTypeOption[] = [
+  { code: 'RETAIL', label: 'Retail shop' },
+  { code: 'WHOLESALE', label: 'Wholesale' },
+  { code: 'SERVICE', label: 'Service' },
+  { code: 'RESTAURANT', label: 'Hotel / restaurant / café' },
+  { code: 'PHARMACY', label: 'Pharmacy' },
+  { code: 'OTHER', label: 'Other' },
 ];
 
 const PAPER_SIZES: { value: PaperSize; label: string }[] = [
@@ -33,6 +35,7 @@ const PAPER_SIZES: { value: PaperSize; label: string }[] = [
 @Component({
   selector: 'app-shop-settings-page',
   imports: [
+    AuthSrc,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -50,7 +53,7 @@ export class ShopSettingsPage {
   private readonly settingsService = inject(ShopSettingsService);
   private readonly snackBar = inject(MatSnackBar);
 
-  protected readonly businessTypes = BUSINESS_TYPES;
+  protected readonly businessTypes = signal<BusinessTypeOption[]>(FALLBACK_BUSINESS_TYPES);
   protected readonly paperSizes = PAPER_SIZES;
   protected readonly billTemplates = signal<BillTemplate[]>([]);
 
@@ -67,7 +70,7 @@ export class ShopSettingsPage {
   protected readonly form = this.fb.nonNullable.group({
     // Business Information
     businessName: ['', Validators.maxLength(255)],
-    businessType: ['RETAIL' as BusinessType],
+    businessType: ['RETAIL'],
     address: [''],
     city: ['', Validators.maxLength(100)],
     state: ['', Validators.maxLength(100)],
@@ -121,8 +124,10 @@ export class ShopSettingsPage {
     forkJoin({
       settings: this.settingsService.getSettings(),
       templates: this.settingsService.listBillTemplates(),
+      types: this.settingsService.listBusinessTypes().pipe(catchError(() => of(FALLBACK_BUSINESS_TYPES))),
     }).subscribe({
-      next: ({ settings, templates }) => {
+      next: ({ settings, templates, types }) => {
+        this.businessTypes.set(types.length ? types : FALLBACK_BUSINESS_TYPES);
         this.billTemplates.set(templates);
         this.form.patchValue(settings);
         this.logoUrl.set(this.settingsService.resolveAttachmentUrl(settings.logoUrl));

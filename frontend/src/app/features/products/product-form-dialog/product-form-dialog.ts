@@ -43,6 +43,7 @@ export class ProductFormDialog {
     price: [this.data.product?.price ?? 0, [Validators.required, Validators.min(0)]],
     taxPercentage: [this.data.product?.taxPercentage ?? 0, [Validators.min(0)]],
     hsnSacCode: [this.data.product?.hsnSacCode ?? '', [Validators.maxLength(20)]],
+    imei: [this.data.product?.imei ?? '', [Validators.maxLength(16), Validators.pattern(/^[0-9]{14,16}$|^$/)]],
     unit: [this.data.product?.unit ?? '', [Validators.maxLength(50)]],
   });
 
@@ -62,6 +63,7 @@ export class ProductFormDialog {
       price: raw.price,
       taxPercentage: raw.taxPercentage,
       hsnSacCode: raw.hsnSacCode || null,
+      imei: raw.imei || null,
       unit: raw.unit || null,
     };
 

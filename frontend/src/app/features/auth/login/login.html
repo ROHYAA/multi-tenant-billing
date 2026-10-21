@@ -6,6 +6,10 @@
       <p class="text-sm opacity-70">Sign in to your shop</p>
     </div>
 
+    <div class="mb-4">
+      <app-pay-note />
+    </div>
+
     <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-1">
       <mat-form-field appearance="outline">
         <mat-label>Shop ID</mat-label>

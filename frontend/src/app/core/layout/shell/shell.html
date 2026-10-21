@@ -1,4 +1,4 @@
-<mat-sidenav-container class="h-screen">
+<mat-sidenav-container class="h-full">
   <mat-sidenav
     #drawer
     class="app-sidenav"
@@ -17,7 +17,7 @@
         <span>{{ banner.text }}</span>
       </div>
     }
-    <main class="flex-1 overflow-auto p-6">
+    <main class="flex-1 overflow-auto p-6" [class.!pb-28]="nativeApp">
       <router-outlet />
     </main>
   </mat-sidenav-content>

@@ -6,6 +6,7 @@ export interface Product {
   price: number;
   taxPercentage: number;
   hsnSacCode?: string;
+  imei?: string;
   unit?: string;
   isActive: boolean;
   createdAt: string;
@@ -19,6 +20,7 @@ export interface CreateProductRequest {
   price: number;
   taxPercentage?: number | null;
   hsnSacCode?: string | null;
+  imei?: string | null;
   unit?: string | null;
 }
 

@@ -28,11 +28,15 @@ export interface SignupRequest {
   name: string;
   email: string;
   password: string;
+  /** Laravel catalog code. Omitted against Java until Phase 6 cutover. */
+  businessType?: string;
 }
 
 /** Raw shape of com.mtbs.auth.dto.auth.AuthResponse, before flattening into CurrentUser. */
 export interface AuthResponseDto {
   user: { userId: number; email: string; role: string; permissions: string[] | null };
+  /** Present only when the API saw X-ShopLedger-Client: capacitor. Website logins omit this. */
+  tokens?: { accessToken: string; refreshToken: string; tokenType?: string };
   tenant: {
     tenantId: number;
     tenantName: string;
@@ -81,6 +85,7 @@ export interface UserProfileResponseDto {
   tenantStatus?: TenantStatus;
   planName?: string;
   subscriptionExpiresAt?: string;
+  isTrial?: boolean;
   schemaName: string;
   permissions?: string[];
 }
@@ -97,7 +102,7 @@ export function toCurrentUserFromProfile(dto: UserProfileResponseDto): CurrentUs
     planName: dto.planName ?? null,
     subscriptionExpiresAt: dto.subscriptionExpiresAt ?? null,
     isFirstLogin: false,
-    isTrial: false,
+    isTrial: dto.isTrial ?? dto.planName === 'TRIAL',
     requiresOnboarding: false,
   };
 }

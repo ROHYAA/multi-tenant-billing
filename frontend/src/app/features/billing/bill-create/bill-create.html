@@ -49,7 +49,10 @@
     </mat-form-field>
     <mat-autocomplete #productAuto="matAutocomplete" (optionSelected)="onProductSelected($event)">
       @for (p of filteredProducts(); track p.id) {
-        <mat-option [value]="p">{{ p.name }} <span class="opacity-60">— {{ p.price | currency: 'INR' }}</span></mat-option>
+        <mat-option [value]="p">
+          {{ p.name }} <span class="opacity-60">— {{ p.price | currency: 'INR' }}</span>
+          @if (p.imei) { <span class="ml-1 text-xs opacity-60">IMEI {{ p.imei }}</span> }
+        </mat-option>
       }
     </mat-autocomplete>
 
@@ -92,7 +95,12 @@
       </div>
       @for (line of store.items(); track line.localId) {
         <div class="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-lg border px-3 py-2" style="border-color: var(--mat-sys-outline-variant)">
-          <span class="w-full truncate text-sm sm:w-auto sm:flex-1">{{ line.description }}</span>
+          <span class="w-full truncate text-sm sm:w-auto sm:flex-1">
+            {{ line.description }}
+            @if (line.imei) {
+              <span class="ml-1 text-xs opacity-60">IMEI {{ line.imei }}</span>
+            }
+          </span>
 
           <label class="flex items-center gap-1 text-xs opacity-60 sm:sr-only">Qty</label>
           <input
@@ -204,6 +212,10 @@
       <button mat-stroked-button class="!h-11 flex-1" [disabled]="printing()" (click)="print()">
         <mat-icon>print</mat-icon>
         {{ printing() ? 'Preparing…' : 'Print' }}
+      </button>
+      <button mat-stroked-button class="!h-11 flex-1" [disabled]="printing()" (click)="share()">
+        <mat-icon>share</mat-icon>
+        Share
       </button>
       <button mat-flat-button color="primary" class="!h-11 flex-1" (click)="startNewBill()">
         <mat-icon>add</mat-icon>

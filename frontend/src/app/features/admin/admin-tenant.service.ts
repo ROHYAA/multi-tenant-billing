@@ -18,6 +18,10 @@ export class AdminTenantService {
     return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/approve`, request);
   }
 
+  grantLifetime(tenantId: number): Observable<AdminTenant> {
+    return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/lifetime`, {});
+  }
+
   reactivate(tenantId: number, request: ApproveTenantRequest): Observable<AdminTenant> {
     return this.api.post<AdminTenant>(`/admin/tenants/${tenantId}/reactivate`, request);
   }

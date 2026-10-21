@@ -249,29 +249,33 @@ public class A4Renderer implements BillTemplateRenderer {
     }
 
     private void addItemsTable(Document document, List<BillItem> items, PdfFont bold, PdfFont regular, float baseFontSize) {
-        Table table = new Table(UnitValue.createPercentArray(new float[]{38, 8, 14, 8, 14, 18}))
+        Table table = new Table(UnitValue.createPercentArray(new float[]{36, 8, 14, 10, 14, 18}))
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginBottom(8);
 
+        // Headers share each column's data alignment so labels sit directly over their values.
         String[] headers = {"Description", "Qty", "Unit price", "Tax %", "Tax", "Total"};
-        for (String h : headers) {
+        TextAlignment[] aligns = {TextAlignment.LEFT, TextAlignment.CENTER, TextAlignment.RIGHT,
+                TextAlignment.CENTER, TextAlignment.RIGHT, TextAlignment.RIGHT};
+        for (int i = 0; i < headers.length; i++) {
             table.addHeaderCell(new Cell()
-                    .add(new Paragraph(h).setFont(bold).setFontSize(baseFontSize * 0.9f))
+                    .add(new Paragraph(headers[i]).setFont(bold).setFontSize(baseFontSize * 0.9f))
                     .setBackgroundColor(TABLE_HEADER)
                     .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
                     .setBorderTop(Border.NO_BORDER)
                     .setBorderLeft(Border.NO_BORDER)
                     .setBorderRight(Border.NO_BORDER)
-                    .setPadding(5));
+                    .setPadding(4)
+                    .setTextAlignment(aligns[i]));
         }
 
         for (BillItem item : items) {
-            table.addCell(itemCell(item.getDescription(), regular, TextAlignment.LEFT, baseFontSize));
-            table.addCell(itemCell(item.getQuantity().toPlainString(), regular, TextAlignment.CENTER, baseFontSize));
-            table.addCell(itemCell(fmt(item.getUnitPrice()), regular, TextAlignment.RIGHT, baseFontSize));
-            table.addCell(itemCell(item.getTaxPercentage().toPlainString() + "%", regular, TextAlignment.CENTER, baseFontSize));
-            table.addCell(itemCell(fmt(item.getTaxAmount()), regular, TextAlignment.RIGHT, baseFontSize));
-            table.addCell(itemCell(fmt(item.getTotal()), regular, TextAlignment.RIGHT, baseFontSize));
+            table.addCell(itemCell(item.getDescription(), regular, aligns[0], baseFontSize));
+            table.addCell(itemCell(trimZeros(item.getQuantity()), regular, aligns[1], baseFontSize));
+            table.addCell(itemCell(fmt(item.getUnitPrice()), regular, aligns[2], baseFontSize));
+            table.addCell(itemCell(trimZeros(item.getTaxPercentage()) + "%", regular, aligns[3], baseFontSize));
+            table.addCell(itemCell(fmt(item.getTaxAmount()), regular, aligns[4], baseFontSize));
+            table.addCell(itemCell(fmt(item.getTotal()), regular, aligns[5], baseFontSize));
         }
 
         document.add(table);
@@ -296,6 +300,9 @@ public class A4Renderer implements BillTemplateRenderer {
         BigDecimal sgst = invoice.getTaxAmount().subtract(cgst);
         addTotalRow(innerTotals, "CGST", fmt(cgst), regular, false, baseFontSize);
         addTotalRow(innerTotals, "SGST", fmt(sgst), regular, false, baseFontSize);
+        if (invoice.getDiscountAmount() != null && invoice.getDiscountAmount().signum() > 0) {
+            addTotalRow(innerTotals, "Discount", "- " + fmt(invoice.getDiscountAmount()), regular, false, baseFontSize);
+        }
 
         innerTotals.addCell(new Cell(1, 2)
                 .setBorderTop(new SolidBorder(BORDER_COLOR, 0.5f))
@@ -422,6 +429,11 @@ public class A4Renderer implements BillTemplateRenderer {
 
     private String fmt(BigDecimal value) {
         return value != null ? value.toPlainString() : "0.00";
+    }
+
+    /** "1.00" -> "1", "18.00" -> "18", "2.50" -> "2.5" — for quantities and percentages. */
+    private String trimZeros(BigDecimal value) {
+        return value != null ? value.stripTrailingZeros().toPlainString() : "0";
     }
 
     private String formatInstant(Instant instant) {

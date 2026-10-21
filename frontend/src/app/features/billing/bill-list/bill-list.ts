@@ -16,6 +16,7 @@ import { DataTable, DataTableColumn } from '../../../shared/components/data-tabl
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { Bill } from '../bill.model';
 import { BillService } from '../bill.service';
+import { printPdf } from '../../../shared/utils/file-output';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'All statuses' },
@@ -133,9 +134,11 @@ export class BillList {
     this.reprintingId.set(bill.id);
     this.billService.downloadPdf(bill.id, 'DUPLICATE').subscribe({
       next: (blob) => {
-        this.reprintingId.set(null);
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        printPdf(blob, `${bill.invoiceNumber}-duplicate.pdf`)
+          .catch((err: unknown) =>
+            this.snackBar.open((err as Error)?.message || 'Could not open the PDF.', 'Dismiss', { duration: 6000 }),
+          )
+          .finally(() => this.reprintingId.set(null));
       },
       error: (err: ApiError) => {
         this.reprintingId.set(null);

@@ -28,7 +28,7 @@
                 style="border-color: var(--mat-sys-outline-variant)"
               >
                 @if (logoUrl(); as url) {
-                  <img [src]="url" crossorigin="use-credentials" alt="Shop logo" class="h-full w-full object-contain" />
+                  <img [appAuthSrc]="url" alt="Shop logo" class="h-full w-full object-contain" />
                 } @else {
                   <mat-icon class="opacity-40">storefront</mat-icon>
                 }
@@ -45,7 +45,7 @@
                 style="border-color: var(--mat-sys-outline-variant)"
               >
                 @if (signatureUrl(); as url) {
-                  <img [src]="url" crossorigin="use-credentials" alt="Signature" class="h-full w-full object-contain" />
+                  <img [appAuthSrc]="url" alt="Signature" class="h-full w-full object-contain" />
                 } @else {
                   <mat-icon class="opacity-40">draw</mat-icon>
                 }
@@ -67,7 +67,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Business Type</mat-label>
               <mat-select formControlName="businessType">
-                @for (t of businessTypes; track t.value) { <mat-option [value]="t.value">{{ t.label }}</mat-option> }
+                @for (t of businessTypes(); track t.code) { <mat-option [value]="t.code">{{ t.label }}</mat-option> }
               </mat-select>
             </mat-form-field>
 

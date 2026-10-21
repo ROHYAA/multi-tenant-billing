@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiError } from '../../../core/models/api-response.model';
 import { AuthService } from '../../../core/auth/auth';
 import { applyServerErrors, serverError } from '../../../shared/forms/server-errors';
+import { PayNote } from '../../../shared/components/pay-note/pay-note';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ import { applyServerErrors, serverError } from '../../../shared/forms/server-err
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    PayNote,
   ],
   templateUrl: './login.html',
   styleUrl: '../auth-page.scss',

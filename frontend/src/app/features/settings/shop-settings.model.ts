@@ -1,4 +1,11 @@
-export type BusinessType = 'RETAIL' | 'WHOLESALE' | 'SERVICE' | 'RESTAURANT' | 'PHARMACY' | 'OTHER';
+/** Catalog codes. Existing Java enum values are preserved; Phase 4 adds grocery/salon/repair/etc. */
+export type BusinessType = string;
+
+export interface BusinessTypeOption {
+  code: string;
+  label: string;
+  legacy?: boolean;
+}
 export type PaperSize = 'A4' | 'THERMAL_58MM' | 'THERMAL_80MM';
 
 /** Mirrors com.mtbs.tenant.settings.dto.ShopSettingsResponse. */

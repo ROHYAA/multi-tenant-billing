@@ -4,22 +4,14 @@ import { RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { Capacitor } from '@capacitor/core';
 import { map } from 'rxjs';
 import { AuthService } from '../../auth/auth';
 import { Sidebar } from '../sidebar/sidebar';
 import { Topbar } from '../topbar/topbar';
 
-// Matches Tailwind's `md` breakpoint (768px) — the plan's stated "collapses
-// to an overlay drawer below md" behavior, driven by CDK rather than CSS
-// alone since mat-sidenav's `mode` is a real @Input, not stylable via CSS.
 const MOBILE_BREAKPOINT = '(max-width: 767.98px)';
 
-/**
- * Authenticated app shell — fixed sidebar + topbar wrapping every feature
- * route. Desktop-first: sidenav is pinned open ('side' mode) by default;
- * below the mobile breakpoint it becomes an overlay drawer ('over' mode,
- * closed by default, toggled by Topbar's menu button).
- */
 @Component({
   selector: 'app-shell',
   imports: [RouterOutlet, MatIconModule, MatSidenavModule, Sidebar, Topbar],
@@ -36,42 +28,22 @@ export class Shell {
   );
 
   protected readonly mobileMenuOpen = signal(false);
+  /** Android app: the native AdMob banner overlays the bottom of the WebView, so content needs room to scroll clear of it. */
+  protected readonly nativeApp = Capacitor.isNativePlatform();
 
-  /**
-   * Persistent reminder for a shop that isn't fully ACTIVE, or whose plan is
-   * about to lapse — without this, the only feedback a PENDING_APPROVAL/
-   * SUSPENDED owner gets is a one-off toast the moment a write is blocked
-   * (see JwtAuthenticationFilter), with nothing on screen explaining why
-   * beforehand, and an about-to-expire ACTIVE owner gets no warning at all
-   * before SubscriptionExpiryJob auto-suspends them.
-   */
   protected readonly statusBanner = computed(() => {
     const user = this.authService.currentUser();
     switch (user?.tenantStatus) {
       case 'PENDING_APPROVAL':
         return {
           icon: 'hourglass_top',
-          text: "Your shop is pending approval. You can view everything, but creating, editing, or deleting anything is disabled until an admin approves your account.",
+          text: 'Your shop is pending approval. You can view data, but writes stay locked.',
         };
       case 'SUSPENDED':
         return {
           icon: 'block',
-          text: 'Your shop has been suspended. Contact support to reactivate it.',
+          text: 'Your shop has been suspended. You can view data, but billing writes stay locked.',
         };
-      case 'ACTIVE': {
-        if (!user.subscriptionExpiresAt) return null;
-        const daysLeft = Math.ceil(
-          (new Date(user.subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-        );
-        if (daysLeft > 5 || daysLeft < 0) return null;
-        return {
-          icon: 'event_busy',
-          text:
-            daysLeft === 0
-              ? `Your ${user.planName ?? 'plan'} expires today. Renew now to avoid losing access.`
-              : `Your ${user.planName ?? 'plan'} expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to avoid losing access.`,
-        };
-      }
       default:
         return null;
     }

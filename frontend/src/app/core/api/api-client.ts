@@ -1,7 +1,16 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, from, retry, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+
+async function assertCompletePdf(blob: Blob): Promise<Blob> {
+  const head = new TextDecoder('latin1').decode(await blob.slice(0, 8).arrayBuffer());
+  const tail = new TextDecoder('latin1').decode(await blob.slice(Math.max(0, blob.size - 64)).arrayBuffer());
+  if (!head.startsWith('%PDF-') || !tail.includes('%%EOF')) {
+    throw new Error('The PDF download was incomplete. Please try again.');
+  }
+  return blob;
+}
 
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
@@ -44,6 +53,17 @@ export class ApiClient {
   /** For PDF download/preview endpoints — response is a raw Blob, not an ApiResponse envelope. */
   getBlob(path: string, params?: QueryParams): Observable<Blob> {
     return this.http.get(`${this.baseUrl}${path}`, { params: this.buildParams(params), responseType: 'blob' });
+  }
+
+  /**
+   * PDF download that verifies the file arrived complete (%PDF header, %%EOF trailer)
+   * and retries twice if not — a damaged PDF must never reach the printer silently.
+   */
+  getPdf(path: string, params?: QueryParams): Observable<Blob> {
+    return this.getBlob(path, params).pipe(
+      switchMap((blob) => from(assertCompletePdf(blob))),
+      retry({ count: 2, delay: 400 }),
+    );
   }
 
   private buildParams(params?: QueryParams): HttpParams {

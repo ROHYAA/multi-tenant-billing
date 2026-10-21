@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ShopLedger</string>
+    <string name="title_activity_main">ShopLedger</string>
+    <string name="package_name">com.shopledger.app</string>
+    <string name="custom_url_scheme">com.shopledger.app</string>
+    <!-- Google sample IDs until a real AdMob app is created. Replace before Play Store. -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="admob_banner_id">ca-app-pub-3940256099942544/6300978111</string>
+</resources>

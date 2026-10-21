@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../core/api/api-client';
 import { environment } from '../../../environments/environment';
-import { Attachment, AttachmentPurpose, BillTemplate, ShopSettings, UpdateShopSettingsRequest } from './shop-settings.model';
+import { Attachment, AttachmentPurpose, BillTemplate, BusinessTypeOption, ShopSettings, UpdateShopSettingsRequest } from './shop-settings.model';
 
 @Injectable({ providedIn: 'root' })
 export class ShopSettingsService {
@@ -26,6 +26,10 @@ export class ShopSettingsService {
 
   listBillTemplates(): Observable<BillTemplate[]> {
     return this.api.get<BillTemplate[]>('/bill-templates');
+  }
+
+  listBusinessTypes(): Observable<BusinessTypeOption[]> {
+    return this.api.get<BusinessTypeOption[]>('/business-types');
   }
 
   uploadAttachment(purpose: AttachmentPurpose, file: File): Observable<Attachment> {

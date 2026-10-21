@@ -44,7 +44,7 @@ export class AdminTenants {
   protected readonly error = signal<string | null>(null);
   /** Row currently mid-request (approve/suspend/reactivate) — disables its own button only. */
   protected readonly busyId = signal<number | null>(null);
-  protected readonly pendingOnly = signal(true);
+  protected readonly pendingOnly = signal(false);
 
   private pageIndex = 0;
   private readonly pageSize = 20;
@@ -114,6 +114,30 @@ export class AdminTenants {
     this.pendingOnly.set(!this.pendingOnly());
     this.pageIndex = 0;
     this.load();
+  }
+
+  grantLifetime(tenant: AdminTenant): void {
+    this.confirmDialogService
+      .confirm({
+        title: 'Grant lifetime?',
+        message: `Unlock ${tenant.name} forever after you received the ₹150 UPI screenshot.`,
+        confirmLabel: 'Grant lifetime',
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.busyId.set(tenant.id);
+        this.tenantService.grantLifetime(tenant.id).subscribe({
+          next: () => {
+            this.busyId.set(null);
+            this.snackBar.open(`${tenant.name} is lifetime. Billing writes stay open.`, 'Dismiss', { duration: 5000 });
+            this.load();
+          },
+          error: (err: ApiError) => {
+            this.busyId.set(null);
+            this.snackBar.open(err.message, 'Dismiss', { duration: 6000 });
+          },
+        });
+      });
   }
 
   approve(tenant: AdminTenant): void {
